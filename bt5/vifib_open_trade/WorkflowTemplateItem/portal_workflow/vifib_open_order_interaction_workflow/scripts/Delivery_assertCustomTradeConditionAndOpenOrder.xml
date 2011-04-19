@@ -79,7 +79,8 @@ if custom_trade_condition is None:\n
                                                                     title="ViFiB Custom Conditions")\n
   custom_trade_condition.validate()\n
 \n
-order.setSpecialiseValue(custom_trade_condition, portal_type="Sale Trade Condition")\n
+if order.getSpecialise() != custom_trade_condition.getRelativeUrl():\n
+  order.setSpecialiseValue(custom_trade_condition, portal_type="Sale Trade Condition")\n
 </string> </value>
         </item>
         <item>
