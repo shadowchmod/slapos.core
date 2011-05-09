@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 name = "slapos.recipe.vifib"
-version = '1.0.dev-0'
+version = '1.1.dev-1'
 
 def read(name):
   return open(name).read()
