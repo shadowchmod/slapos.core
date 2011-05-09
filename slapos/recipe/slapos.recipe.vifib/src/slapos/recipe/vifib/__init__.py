@@ -86,7 +86,7 @@ SSLCARevocationPath %(ca_crl)s"""
     self.requirements, self.ws = self.egg.working_set([__name__])
     # self.cron_d is a directory, where cron jobs can be registered
     self.cron_d = self.installCrond()
-    self.logrotate_d = self.installLogrotate()
+    self.logrotate_d, self.logrotate_backup = self.installLogrotate()
     self.killpidfromfile = zc.buildout.easy_install.scripts(
         [('killpidfromfile', __name__ + '.killpidfromfile',
           'killpidfromfile')], self.ws, sys.executable, self.bin_directory)[0]
