@@ -79,6 +79,13 @@ SSLCARevocationPath %(ca_crl)s"""
           ]))
     return 'https://%(ip)s:%(port)s' % apache_conf
 
+  def _getZeoClusterDict(self):
+    site_path = '/erp5/'
+    return {
+        '/': (self._requestZeoFileStorage('Zeo Server 1', 'main'),
+          site_path + 'account_module'),
+    }
+
   def _install(self):
     site_check_path = '/%s/getId' % self.site_id
     key_auth_path = '/%s/portal_slap' % self.site_id
@@ -102,24 +109,43 @@ SSLCARevocationPath %(ca_crl)s"""
     self._createDirectory(zodb_dir)
     zodb_root_path = os.path.join(zodb_dir, 'root.fs')
     ip = self.getLocalIPv4Address()
-    zeo_conf = self.installZeo(ip, 22001, 'root',
-        zodb_root_path)
+    mount_point_zeo_dict = self._getZeoClusterDict()
+    zeo_conf = self.installZeo(ip)
+    zodb_configuration_list = []
+    known_tid_storage_identifier_dict = {}
+    for mount_point, (storage_dict, check_path) in mount_point_zeo_dict.iteritems():
+      known_tid_storage_identifier_dict[
+        (((storage_dict['ip'],storage_dict['port']),), storage_dict['storage_name'])
+        ] = (zeo_conf[storage_dict['storage_name']]['path'], check_path or mount_point)
+      zodb_configuration_list.append(self.substituteTemplate(
+        self.getTemplateFilename('zope-zeo-snippet.conf.in'), dict(
+        storage_name=storage_dict['storage_name'],
+        address='%s:%s' % (storage_dict['ip'], storage_dict['port']),
+        mount_point=mount_point
+        )))
+    tidstorage_config = dict(host=self.getLocalIPv4Address(), port='6001')
+    zodb_configuration_string = '\n'.join(zodb_configuration_list)
     zope_port = 12000
     # One Distribution Node
     zope_port +=1
-    self.installZope(ip, zope_port, 'zope_distribution',
-        with_timerservice=True, **zeo_conf)
+    self.installZope(ip, zope_port, 'zope_distribution', with_timerservice=True,
+        zodb_configuration_string=zodb_configuration_string,
+        tidstorage_config=tidstorage_config)
     # Two Activity Nodes
     for i in (1, 2):
       zope_port += 1
       self.installZope(ip, zope_port, 'zope_activity_%s' % i,
-        with_timerservice=True, **zeo_conf)
+          with_timerservice=True,
+          zodb_configuration_string=zodb_configuration_string,
+          tidstorage_config=tidstorage_config)
     # Four Web Page Nodes (Human access)
     login_url_list = []
     for i in (1, 2, 3, 4):
       zope_port += 1
       login_url_list.append(self.installZope(ip, zope_port,
-        'zope_login_%s' % i, with_timerservice=False, **zeo_conf))
+        'zope_login_%s' % i, with_timerservice=False,
+        zodb_configuration_string=zodb_configuration_string,
+        tidstorage_config=tidstorage_config))
     login_haproxy = self.installHaproxy(ip, 15001, 'login', site_check_path,
         login_url_list)
     apache_login = self.installLoginApache(self.getGlobalIPv6Address(), 15000,
@@ -129,9 +155,11 @@ SSLCARevocationPath %(ca_crl)s"""
     for i in (1, 2, 3, 4):
       zope_port += 1
       service_url_list.append(self.installZope(ip, zope_port,
-        'zope_service_%s' % i, with_timerservice=False, **zeo_conf))
-    service_haproxy = self.installHaproxy(ip, 15000, 'service', site_check_path,
-        service_url_list)
+        'zope_service_%s' % i, with_timerservice=False,
+        zodb_configuration_string=zodb_configuration_string,
+        tidstorage_config=tidstorage_config))
+    service_haproxy = self.installHaproxy(ip, 15000, 'service',
+        site_check_path, service_url_list)
     apache_keyauth = self.installKeyAuthorisationApache(
         self.getLocalIPv4Address(), 15500, service_haproxy, ca_conf,
         key_auth_path=key_auth_path)
