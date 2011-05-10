@@ -86,18 +86,7 @@ SSLCARevocationPath %(ca_crl)s"""
           site_path + 'account_module'),
     }
 
-  def _install(self):
-    site_check_path = '/%s/getId' % self.site_id
-    key_auth_path = '/%s/portal_slap' % self.site_id
-    self.path_list = []
-    self.requirements, self.ws = self.egg.working_set([__name__])
-    # self.cron_d is a directory, where cron jobs can be registered
-    self.cron_d = self.installCrond()
-    self.logrotate_d, self.logrotate_backup = self.installLogrotate()
-    self.killpidfromfile = zc.buildout.easy_install.scripts(
-        [('killpidfromfile', __name__ + '.killpidfromfile',
-          'killpidfromfile')], self.ws, sys.executable, self.bin_directory)[0]
-    self.path_list.append(self.killpidfromfile)
+  def installProduction(self):
     ca_conf = self.installCertificateAuthority()
     memcached_conf = self.installMemcached(ip=self.getLocalIPv4Address(),
         port=11000)
@@ -146,7 +135,7 @@ SSLCARevocationPath %(ca_crl)s"""
         'zope_login_%s' % i, with_timerservice=False,
         zodb_configuration_string=zodb_configuration_string,
         tidstorage_config=tidstorage_config))
-    login_haproxy = self.installHaproxy(ip, 15001, 'login', site_check_path,
+    login_haproxy = self.installHaproxy(ip, 15001, 'login', self.site_check_path,
         login_url_list)
     apache_login = self.installLoginApache(self.getGlobalIPv6Address(), 15000,
         login_haproxy, ca_conf['login_key'], ca_conf['login_certificate'])
@@ -159,10 +148,10 @@ SSLCARevocationPath %(ca_crl)s"""
         zodb_configuration_string=zodb_configuration_string,
         tidstorage_config=tidstorage_config))
     service_haproxy = self.installHaproxy(ip, 15000, 'service',
-        site_check_path, service_url_list)
+        self.site_check_path, service_url_list)
     apache_keyauth = self.installKeyAuthorisationApache(
         self.getLocalIPv4Address(), 15500, service_haproxy, ca_conf,
-        key_auth_path=key_auth_path)
+        key_auth_path=self.key_auth_path)
     memcached_conf = self.installMemcached(ip=self.getLocalIPv4Address(),
         port=11000)
     kumo_conf = self.installKumo(self.getLocalIPv4Address())
@@ -188,3 +177,24 @@ SSLCARevocationPath %(ca_crl)s"""
       mysql_url='%(mysql_database)s@%(ip)s:%(tcp_port)s %(mysql_user)s %(mysql_password)s' % mysql_conf,
     ))
     return self.path_list
+
+  def installDevelopment(self):
+    raise NotImplementedError
+
+  def _install(self):
+    self.site_check_path = '/%s/getId' % self.site_id
+    self.key_auth_path = '/%s/portal_slap' % self.site_id
+    self.path_list = []
+    self.requirements, self.ws = self.egg.working_set([__name__])
+    # self.cron_d is a directory, where cron jobs can be registered
+    self.cron_d = self.installCrond()
+    self.logrotate_d, self.logrotate_backup = self.installLogrotate()
+    self.killpidfromfile = zc.buildout.easy_install.scripts(
+        [('killpidfromfile', __name__ + '.killpidfromfile',
+          'killpidfromfile')], self.ws, sys.executable, self.bin_directory)[0]
+    self.path_list.append(self.killpidfromfile)
+    if self.parameter_dict.get('development', 'false').lower() == 'true':
+      return self.installDevelopmentEnvironment()
+    if self.parameter_dict.get('production', 'false').lower() == 'true':
+      return self.installProduction()
+    raise NotImplementedError('Flavour of instance have to be given.')
