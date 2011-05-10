@@ -155,8 +155,6 @@ SSLCARevocationPath %(ca_crl)s"""
     memcached_conf = self.installMemcached(ip=self.getLocalIPv4Address(),
         port=11000)
     kumo_conf = self.installKumo(self.getLocalIPv4Address())
-    self.installTestRunner(ca_conf, mysql_conf, conversion_server_conf,
-        memcached_conf, kumo_conf)
     self.linkBinary()
     self.setConnectionDict(dict(
       site_url=apache_login,
@@ -179,7 +177,53 @@ SSLCARevocationPath %(ca_crl)s"""
     return self.path_list
 
   def installDevelopment(self):
-    raise NotImplementedError
+    ca_conf = self.installCertificateAuthority()
+    memcached_conf = self.installMemcached(ip=self.getLocalIPv4Address(),
+        port=11000)
+    conversion_server_conf = self.installConversionServer(
+        self.getLocalIPv4Address(), 23000, 23060)
+    mysql_conf = self.installMysqlServer(self.getLocalIPv4Address(), 45678)
+    user, password = self.installERP5()
+    zodb_dir = os.path.join(self.data_root_directory, 'zodb')
+    self._createDirectory(zodb_dir)
+    zodb_root_path = os.path.join(zodb_dir, 'root.fs')
+    ip = self.getLocalIPv4Address()
+    zope_port = '18080'
+    zope_access = self.installZope(ip, zope_port, 'zope_development',
+        zodb_configuration_string=self.substituteTemplate(
+          self.getTemplateFilename('zope-zodb-snippet.conf.in'),
+          dict(zodb_root_path=zodb_root_path)),
+          thread_amount=8, with_timerservice=True)
+    service_haproxy = self.installHaproxy(ip, 15000, 'service',
+        self.site_check_path, [zope_access])
+    apache_keyauth = self.installKeyAuthorisationApache(
+        self.getLocalIPv4Address(), 15500, service_haproxy, ca_conf,
+        key_auth_path=self.key_auth_path)
+    memcached_conf = self.installMemcached(ip=self.getLocalIPv4Address(),
+        port=11000)
+    kumo_conf = self.installKumo(self.getLocalIPv4Address())
+    self.installTestRunner(ca_conf, mysql_conf, conversion_server_conf,
+        memcached_conf, kumo_conf)
+    self.linkBinary()
+    self.setConnectionDict(dict(
+      development_zope='http://%s:%s/' % (ip, zope_port),
+      site_user=user,
+      site_password=password,
+      service_url=apache_keyauth,
+      memcached_url=memcached_conf['memcached_url'],
+      conversion_server_url='%(conversion_server_ip)s:%(conversion_server_port)s' %
+        conversion_server_conf,
+      # openssl binary might be removed, as soon as CP environment will be
+      # fully controlled
+      openssl_binary=self.options['openssl_binary'],
+      # As soon as there would be Vifib ERP5 configuration and possibility to
+      # call it over the network this can be removed
+      certificate_authority_path=ca_conf['certificate_authority_path'],
+      # as installERP5Site is not trusted (yet) and this recipe is production
+      # ready expose more information
+      mysql_url='%(mysql_database)s@%(ip)s:%(tcp_port)s %(mysql_user)s %(mysql_password)s' % mysql_conf,
+    ))
+    return self.path_list
 
   def _install(self):
     self.site_check_path = '/%s/getId' % self.site_id
@@ -194,7 +238,7 @@ SSLCARevocationPath %(ca_crl)s"""
           'killpidfromfile')], self.ws, sys.executable, self.bin_directory)[0]
     self.path_list.append(self.killpidfromfile)
     if self.parameter_dict.get('development', 'false').lower() == 'true':
-      return self.installDevelopmentEnvironment()
+      return self.installDevelopment()
     if self.parameter_dict.get('production', 'false').lower() == 'true':
       return self.installProduction()
     raise NotImplementedError('Flavour of instance have to be given.')
