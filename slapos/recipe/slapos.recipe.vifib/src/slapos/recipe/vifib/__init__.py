@@ -96,7 +96,6 @@ SSLCARevocationPath %(ca_crl)s"""
     user, password = self.installERP5()
     zodb_dir = os.path.join(self.data_root_directory, 'zodb')
     self._createDirectory(zodb_dir)
-    zodb_root_path = os.path.join(zodb_dir, 'root.fs')
     ip = self.getLocalIPv4Address()
     mount_point_zeo_dict = self._getZeoClusterDict()
     zeo_conf = self.installZeo(ip)
@@ -162,6 +161,7 @@ SSLCARevocationPath %(ca_crl)s"""
       site_password=password,
       service_url=apache_keyauth,
       memcached_url=memcached_conf['memcached_url'],
+      kumo_url=kumo_conf['kumo_address'],
       conversion_server_url='%(conversion_server_ip)s:%(conversion_server_port)s' %
         conversion_server_conf,
       # openssl binary might be removed, as soon as CP environment will be
@@ -211,6 +211,7 @@ SSLCARevocationPath %(ca_crl)s"""
       site_password=password,
       service_url=apache_keyauth,
       memcached_url=memcached_conf['memcached_url'],
+      kumo_url=kumo_conf['kumo_address'],
       conversion_server_url='%(conversion_server_ip)s:%(conversion_server_port)s' %
         conversion_server_conf,
       # openssl binary might be removed, as soon as CP environment will be
