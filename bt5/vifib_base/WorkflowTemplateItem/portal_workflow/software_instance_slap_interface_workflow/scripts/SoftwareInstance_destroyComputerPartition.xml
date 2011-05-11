@@ -52,8 +52,14 @@
             <key> <string>_body</string> </key>
             <value> <string># revoke certificate\n
 software_instance = state_change[\'object\']\n
-context.getPortalObject().portal_certificate_authority\\\n
-  .revokeCertificate(software_instance.getDestinationReference())\n
+try:\n
+  context.getPortalObject().portal_certificate_authority\\\n
+    .revokeCertificate(software_instance.getDestinationReference())\n
+except ValueError:\n
+  # Ignore already revoked certificates, as OpenSSL backend is\n
+  # non transactional, so it is ok to allow multiple tries to destruction\n
+  # even if certificate was already revoked\n
+  pass\n
 \n
 # remove certificate from SI\n
 software_instance.edit(\n
