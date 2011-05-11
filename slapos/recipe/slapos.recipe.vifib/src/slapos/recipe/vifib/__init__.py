@@ -154,6 +154,8 @@ SSLCARevocationPath %(ca_crl)s"""
     memcached_conf = self.installMemcached(ip=self.getLocalIPv4Address(),
         port=11000)
     kumo_conf = self.installKumo(self.getLocalIPv4Address())
+    self.installTidStorage(tidstorage_config['host'], tidstorage_config['port'],
+        known_tid_storage_identifier_dict, 'http://'+login_haproxy)
     self.linkBinary()
     self.setConnectionDict(dict(
       site_url=apache_login,
