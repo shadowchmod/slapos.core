@@ -57,7 +57,7 @@ except ImportError:
     def __init__(self):
       raise ImportError
 
-from zLOG import LOG, INFO, ERROR
+from zLOG import LOG, INFO
 import xml_marshaller
 from Products.Vifib.Conduit import VifibConduit
 class SoftwareInstanceNotReady(Exception):
@@ -662,7 +662,7 @@ class SlapTool(BaseTool):
     computer_partition_document = self._getComputerPartitionDocument(
       computer_id, computer_partition_id)
     if computer_partition_document.getSlapState() != 'busy':
-      LOG('SlapTool::_getSoftwareInstanceForComputerPartition', ERROR,
+      LOG('SlapTool::_getSoftwareInstanceForComputerPartition', INFO,
           'Computer partition %s shall be busy, is free' %
           computer_partition_document.getRelativeUrl())
       raise NotFound, "No software instance found for: %s - %s" % (computer_id,
