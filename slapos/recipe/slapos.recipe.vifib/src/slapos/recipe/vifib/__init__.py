@@ -91,7 +91,10 @@ SSLCARevocationPath %(ca_crl)s"""
     }
 
   def installProduction(self):
-    ca_conf = self.installCertificateAuthority()
+    ca_conf = self.installCertificateAuthority(
+        self.parameter_dict['ca_country_code'],
+        self.parameter_dict['ca_email'], self.parameter_dict['ca_state'],
+        self.parameter_dict['ca_city'], self.parameter_dict['ca_company'])
     memcached_conf = self.installMemcached(ip=self.getLocalIPv4Address(),
         port=11000)
     conversion_server_conf = self.installConversionServer(
