@@ -31,8 +31,8 @@ import zc.buildout
 import sys
 
 class Recipe(slapos.recipe.erp5.Recipe):
-  def installKeyAuthorisationApache(self, ip, port, backend, ca_conf,
-      key_auth_path='/erp5/portal_slap'):
+  def installKeyAuthorisationApache(self, ip, port, backend, key, certificate,
+      ca_conf, key_auth_path='/erp5/portal_slap'):
     ssl_template = """SSLEngine on
 SSLVerifyClient require
 RequestHeader set REMOTE_USER %%{SSL_CLIENT_S_DN_CN}s
@@ -41,7 +41,12 @@ SSLCertificateKeyFile %(key_auth_key)s
 SSLCACertificateFile %(ca_certificate)s
 SSLCARevocationPath %(ca_crl)s"""
     apache_conf = self._getApacheConfigurationDict('key_auth_apache', ip, port)
-    apache_conf['ssl_snippet'] = ssl_template % ca_conf
+    apache_conf['ssl_snippet'] = ssl_template % dict(
+        key_auth_certificate=certificate,
+        key_auth_key=key,
+        ca_certificate=ca_conf['ca_certificate'],
+        ca_crl=ca_conf['ca_crl']
+        )
     prefix = 'ssl_key_auth_apache'
     rewrite_rule_template = \
       "RewriteRule (.*) http://%(backend)s%(key_auth_path)s$1 [L,P]"
@@ -70,8 +75,7 @@ SSLCARevocationPath %(ca_crl)s"""
         'slapos.recipe.erp5.apache', 'runApache')], self.ws,
           sys.executable, self.wrapper_directory, arguments=[
             dict(
-              required_path_list=[ca_conf['key_auth_certificate'],
-                ca_conf['key_auth_key'], ca_conf['ca_certificate'],
+              required_path_list=[certificate, key, ca_conf['ca_certificate'],
                 ca_conf['ca_crl']],
               binary=self.options['httpd_binary'],
               config=apache_config_file
@@ -134,10 +138,12 @@ SSLCARevocationPath %(ca_crl)s"""
         'zope_login_%s' % i, with_timerservice=False,
         zodb_configuration_string=zodb_configuration_string,
         tidstorage_config=tidstorage_config))
+    backend_key, backend_certificate = self.requestCertificate(
+        'Login Based Access')
     login_haproxy = self.installHaproxy(ip, 15001, 'login', self.site_check_path,
         login_url_list)
-    apache_login = self.installLoginApache(self.getGlobalIPv6Address(), 15000,
-        login_haproxy, ca_conf['login_key'], ca_conf['login_certificate'])
+    apache_login = self.installBackendApache(self.getGlobalIPv6Address(), 15000,
+        login_haproxy, backend_key, backend_certificate)
     # Four Web Service Nodes (Machine access)
     service_url_list = []
     for i in (1, 2, 3, 4):
@@ -148,9 +154,12 @@ SSLCARevocationPath %(ca_crl)s"""
         tidstorage_config=tidstorage_config))
     service_haproxy = self.installHaproxy(ip, 15000, 'service',
         self.site_check_path, service_url_list)
+
+    key_auth_key, key_auth_certificate = self.requestCertificate(
+        'Key Based Access')
     apache_keyauth = self.installKeyAuthorisationApache(
-        self.getLocalIPv4Address(), 15500, service_haproxy, ca_conf,
-        key_auth_path=self.key_auth_path)
+        self.getLocalIPv4Address(), 15500, service_haproxy, key_auth_key,
+        key_auth_certificate, ca_conf, key_auth_path=self.key_auth_path)
     memcached_conf = self.installMemcached(ip=self.getLocalIPv4Address(),
         port=11000)
     kumo_conf = self.installKumo(self.getLocalIPv4Address())
@@ -198,9 +207,11 @@ SSLCARevocationPath %(ca_crl)s"""
           thread_amount=8, with_timerservice=True)
     service_haproxy = self.installHaproxy(ip, 15000, 'service',
         self.site_check_path, [zope_access])
+    key_auth_key, key_auth_certificate = self.requestCertificate(
+        'Key Based Access')
     apache_keyauth = self.installKeyAuthorisationApache(
-        self.getLocalIPv4Address(), 15500, service_haproxy, ca_conf,
-        key_auth_path=self.key_auth_path)
+        self.getLocalIPv4Address(), 15500, service_haproxy, key_auth_key,
+        key_auth_certificate, ca_conf, key_auth_path=self.key_auth_path)
     memcached_conf = self.installMemcached(ip=self.getLocalIPv4Address(),
         port=11000)
     kumo_conf = self.installKumo(self.getLocalIPv4Address())
