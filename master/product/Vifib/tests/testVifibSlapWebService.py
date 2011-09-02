@@ -3769,16 +3769,6 @@ class TestVifibSlapWebService(TestVifibSlapWebServiceMixin):
     """
     raise NotImplementedError
 
-  ########################################
-  # OpenOrder.request
-  ########################################
-
-  @skip('Not implemented')
-  def test_OpenOrder_request(self):
-    """
-    """
-    raise NotImplementedError
-
   #########################################
   # SlaveInstance.request
   #########################################
