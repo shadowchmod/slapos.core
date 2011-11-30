@@ -114,7 +114,7 @@ Request a new instantiation of a software.
 
 `Request`::
 
-  POST http://example.com/api/v1/request HTTP/1.1
+  POST http://example.com/api/v1/instance HTTP/1.1
   Content-Type: application/json; charset=utf-8
 
 `Expected Request Body`::
