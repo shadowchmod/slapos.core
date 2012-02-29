@@ -28,11 +28,11 @@
 #############################################################################
 import unittest
 
-from DateTime import DateTime
 from lxml import etree
 from slapos import slap
 from testVifibSlapWebService import TestVifibSlapWebServiceMixin
 from Products.ERP5Type.tests.Sequence import SequenceList
+from Products.ERP5Type.tests.backportUnittest import skip
 
 def test_suite():
   suite = unittest.TestSuite()
@@ -101,12 +101,7 @@ class TestVifibUsageReportMixin(TestVifibSlapWebServiceMixin):
     """
 
   prepare_configured_instance = """ \
-    InitializeTime \
-    \
-    LoginERP5TypeTestCase \
-    ConfigureInstance \
-    Tic \
-    Logout""" + \
+    InitializeTime""" + \
     TestVifibSlapWebServiceMixin.prepare_confirmed_cleanup_resource_packing_list
 
   prepare_reported_usage_call = """ \
@@ -120,29 +115,6 @@ class TestVifibUsageReportMixin(TestVifibSlapWebServiceMixin):
         sort_on=('uid', 'DESC'), limit=1)[0].uid
     sequence['first_call'] = False
     sequence['second_call'] = False
-
-  def stepConfigureInstance(self, sequence, **kw):
-    """
-    Configures the Instance
-    """
-    portal = self.getPortalObject()
-
-    # We validate some documents
-    for rule in portal.portal_rules.contentValues():
-      if rule.getObject().getValidationState() == 'draft':
-        rule.getObject().validate()
-
-    for person in portal.person_module.contentValues():
-      if person.getObject().getValidationState() == 'draft':
-        person.getObject().validate()
-
-    for business_process in portal.business_process_module.contentValues():
-      if business_process.getObject().getValidationState() == 'draft':
-        business_process.getObject().validate()
-
-    for sale_trade in portal.sale_trade_condition_module.contentValues():
-      if sale_trade.getObject().getValidationState() == 'draft':
-        sale_trade.getObject().validate()
 
   def stepSlapReportUsageCall(self, sequence, **kw):
     """
@@ -341,6 +313,7 @@ class TestVifibUsageReport(TestVifibUsageReportMixin):
   def getTitle(self):
     return "testVifibUsageReport"
 
+  @skip('Ignored for now.')
   def test_usageReportWithSinglePartition(self):
     """
     Checks if useComputer method of SlapTool is properly called one time.
@@ -363,10 +336,16 @@ class TestVifibUsageReport(TestVifibUsageReportMixin):
       CheckSaleInvoiceExists \
       CheckSaleInvoiceQuantitySinglePartition \
       ClearModules \
-      Logout"""
+      Logout
+
+      LoginERP5TypeTestCase
+      CheckSiteConsistency
+      Logout
+      """
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
+  @skip('Ignored for now.')
   def test_usageReportWithTwoPartitions(self):
     """
     Checks if useComputer method of SlapTool is properly called two times.
@@ -396,6 +375,11 @@ class TestVifibUsageReport(TestVifibUsageReportMixin):
       Tic \
       CheckSaleInvoiceExists \
       CheckSaleInvoiceQuantityTwoPartitions \
-      Logout"""
+      Logout
+
+      LoginERP5TypeTestCase
+      CheckSiteConsistency
+      Logout
+      """
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)

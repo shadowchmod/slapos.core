@@ -96,11 +96,14 @@ if transaction_status in mark_transaction_id_list:\n
   storeWorkflowComment(transaction, \'Transaction status %s (%s) did not changed the document state\' % (transaction_status, transaction_status_description))\n
   payzen_event.confirm()\n
   payzen_event.acknowledge(comment=\'Automatic acknowledge as result of correct communication\')\n
+  if transaction.getSimulationState() == \'planned\':\n
+    transaction.activate().PaymentTransaction_confirm()\n
+\n
 elif transaction_status in continue_transaction_id_list:\n
   # Check authAmount and authDevise and if match, start transaction\n
   auth_amount = int(data_kw[\'authAmount\'])\n
   auth_devise = data_kw[\'authDevise\']\n
-  transaction_amount = int(round((transaction.PaymentTransaction_getTotalPayablePrice() * 100), 2))\n
+  transaction_amount = int(round((transaction.PaymentTransaction_getTotalPayablePrice() * -100), 2))\n
   if transaction_amount != auth_amount:\n
     payzen_event.confirm(comment=\'Received amount (%r) does not match stored on transaction (%r)\'% (auth_amount, transaction_amount))\n
     return\n

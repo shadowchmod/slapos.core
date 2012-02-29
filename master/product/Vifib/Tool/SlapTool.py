@@ -155,6 +155,29 @@ class SlapTool(BaseTool):
     return xml_marshaller.xml_marshaller.dumps(slap_computer)
 
   security.declareProtected(Permissions.AccessContentsInformation,
+    'getFullComputerInformation')
+  def getFullComputerInformation(self, computer_id):
+    """Returns marshalled XML of all needed information for computer
+
+    Includes Software Releases, which may contain Software Instances.
+
+    Reuses slap library for easy marshalling.
+    """
+    self.REQUEST.response.setHeader('Content-Type', 'text/xml')
+    slap_computer = Computer(computer_id)
+    parent_uid = self._getComputerUidByReference(computer_id)
+
+    slap_computer._computer_partition_list = []
+    slap_computer._software_release_list = \
+         self._getSoftwareReleaseValueListForComputer(computer_id, full=True)
+    for computer_partition in self.getPortalObject().portal_catalog(
+                    parent_uid=parent_uid,
+                    portal_type="Computer Partition"):
+      slap_computer._computer_partition_list.append(
+          self._getSlapPartitionByPackingList(computer_partition.getObject()))
+    return xml_marshaller.xml_marshaller.dumps(slap_computer)
+
+  security.declareProtected(Permissions.AccessContentsInformation,
     'getComputerPartitionCertificate')
   def getComputerPartitionCertificate(self, computer_id, computer_partition_id):
     """Method to fetch certificate"""
@@ -244,6 +267,17 @@ class SlapTool(BaseTool):
     """
     return self._softwareInstanceError(computer_id, computer_partition_id,
                                        error_log)
+
+  security.declareProtected(Permissions.AccessContentsInformation,
+    'softwareInstanceRename')
+  def softwareInstanceRename(self, new_name, computer_id,
+                             computer_partition_id, slave_reference=None):
+    """
+    Change the title of a Software Instance using Workflow.
+    """
+    return self._softwareInstanceRename(new_name, computer_id,
+                                        computer_partition_id,
+                                        slave_reference)
 
   security.declareProtected(Permissions.AccessContentsInformation,
     'softwareInstanceBang')
@@ -536,28 +570,34 @@ class SlapTool(BaseTool):
     setup_service = portal.restrictedTraverse(
        portal_preferences.getPreferredInstanceSetupResource())
 
-    hosting_query = ComplexQuery(Query(aggregate_portal_type="Slave Instance"),
-      Query(aggregate_relative_url=computer_partition_document.getRelativeUrl()),
-      # Search only for Confirmed and Stopped, the only one states that require
-      # buildout be re-updated.
-      Query(simulation_state=["confirmed", "stopped"]),
+    update_service = portal.restrictedTraverse(
+       portal_preferences.getPreferredInstanceUpdateResource())
+
+    global_query_kw = dict(aggregate_portal_type="Slave Instance",
+        default_aggregate_uid=computer_partition_document.getUid(),)
+
+    hosting_query = ComplexQuery(Query(simulation_state=["confirmed", "stopped"]),
       Query(default_resource_uid=hosting_service.getUid()),
       operator="AND")
 
-    setup_query = ComplexQuery(Query(aggregate_portal_type="Slave Instance"),
-      Query(aggregate_relative_url=computer_partition_document.getRelativeUrl()),
-      Query(simulation_state=["confirmed", "started"]),
+    setup_query = ComplexQuery(Query(simulation_state=["confirmed", "started"]),
       Query(default_resource_uid=setup_service.getUid()),
       operator="AND")
 
-    query = ComplexQuery(hosting_query, setup_query, operator="OR")
+    update_query = ComplexQuery(Query(simulation_state=["confirmed"]),
+      Query(default_resource_uid=update_service.getUid()),
+      operator="AND")
+
+    query = ComplexQuery(hosting_query,
+                         setup_query,
+                         update_query,
+                         operator="OR")
 
     # Use getTrackingList
     catalog_result = portal.portal_catalog(
       portal_type='Sale Packing List Line',
-      sort_on=(('movement.start_date', 'DESC'),),
       limit=1,
-      query=query)
+      query=query, **global_query_kw)
 
     return len(catalog_result)
 
@@ -625,6 +665,15 @@ class SlapTool(BaseTool):
         computer_id,
         computer_partition_id).reportComputerPartitionError(
                                      comment=error_log)
+
+  @convertToREST
+  def _softwareInstanceRename(self, new_name, computer_id,
+                              computer_partition_id, slave_reference):
+    software_instance = self._getSoftwareInstanceForComputerPartition(
+      computer_id, computer_partition_id,
+      slave_reference)
+    return software_instance.rename(new_name=new_name,
+      comment="Rename %s into %s" % (software_instance.title, new_name))
 
   @convertToREST
   def _softwareInstanceBang(self, computer_id,
@@ -819,8 +868,18 @@ class SlapTool(BaseTool):
                          requested_software_instance, **query_kw)
       if movement is None:
         raise SoftwareInstanceNotReady
-      software_instance = SoftwareInstance(
-        **self._getSalePackingListLineAsSoftwareInstance(movement))
+      parameter_dict = self._getSalePackingListLineAsSoftwareInstance(movement)
+      software_instance = SoftwareInstance(**parameter_dict)
+
+      if shared:
+        # XXX: Dirty hack
+        for slave_instance in parameter_dict.get("slave_instance_list", []):
+          if slave_instance['slave_title'] == partition_reference:
+            break
+        software_instance._parameter_dict = self._instanceXmlToDict(
+          slave_instance.pop('xml'))
+        software_instance._connection_dict = self._instanceXmlToDict(
+          slave_instance.pop('connection_xml'))
       return xml_marshaller.xml_marshaller.dumps(software_instance)
 
   ####################################################
@@ -904,7 +963,8 @@ class SlapTool(BaseTool):
     return merged_dict
 
   @UnrestrictedMethod
-  def _getSoftwareReleaseValueListForComputer(self, computer_reference):
+  def _getSoftwareReleaseValueListForComputer(self, computer_reference,
+                                              full=False):
     """Returns list of Software Releases documentsfor computer"""
     computer_document = self._getComputerDocument(computer_reference)
     portal = self.getPortalObject()
@@ -912,6 +972,8 @@ class SlapTool(BaseTool):
     state_list = []
     state_list.extend(portal.getPortalReservedInventoryStateList())
     state_list.extend(portal.getPortalTransitInventoryStateList())
+    if full:
+      state_list.extend(portal.getPortalCurrentInventoryStateList())
 
     software_release_list = []
     for software_release_url_string in computer_document\
@@ -949,11 +1011,11 @@ class SlapTool(BaseTool):
     state_list.extend(portal.getPortalTransitInventoryStateList())
     if slave_reference is not None:
       query = ComplexQuery(Query(aggregate_reference=slave_reference),
-          Query(aggregate_relative_url=computer_partition_document.getRelativeUrl()),
+          Query(default_aggregate_uid=computer_partition_document.getUid()),
           operator="AND")
     else:
       query = ComplexQuery(Query(aggregate_portal_type="Software Instance"),
-          Query(aggregate_relative_url=computer_partition_document.getRelativeUrl()),
+          Query(default_aggregate_uid=computer_partition_document.getUid()),
           operator="AND")
 
     # Use getTrackingList

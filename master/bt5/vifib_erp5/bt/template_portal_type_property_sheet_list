@@ -1,10 +1,18 @@
 Assignment | VifibAssignmentConstraint
 Computer | VifibComputerConstraint
 Email | VifibEmailConstraint
+Hosting Subscription | VifibHostingSubscriptionConstraint
 Internal Packing List Line | VifibInternalPackingListLineConstraint
 Internal Packing List | VifibInternalPackingListConstraint
+Open Sale Order Line | VifibOpenSaleOrderLineConstraint
+Open Sale Order | VifibOpenSaleOrderConstraint
 Person | VifibPersonConstraint
 Purchase Packing List Line | VifibPurchasePackingListLineConstraint
 Purchase Packing List | VifibPurchasePackingListConstraint
+Sale Invoice Transaction | VifibSaleInvoiceConstraint
+Sale Order Line | VifibSaleOrderLineConstraint
+Sale Order | VifibSaleOrderConstraint
+Sale Packing List Line | VifibSalePackingListLineConstraint
+Sale Packing List | VifibSalePackingListConstraint
 Software Product | VifibSoftwareProductConstraint
 Software Release | VifibSoftwareReleaseConstraint

@@ -1,4 +1,5 @@
 from Products.ERP5Type.tests.Sequence import SequenceList
+from Products.ERP5Type.tests.backportUnittest import expectedFailure
 import unittest
 from testVifibSlapWebService import TestVifibSlapWebServiceMixin
 
@@ -29,10 +30,14 @@ class TestVifibSlapComputerPartitionError(TestVifibSlapWebServiceMixin):
       SlapLoginCurrentComputer \
       CheckNotFoundComputerPartitionErrorAfterRegisterCall \
       SlapLogout \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
+      Logout \
     '
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
+  @expectedFailure
   def test_ComputerPartition_error_SetupResource_CancelledState(self):
     """
     Check that calling ComputerPartition.error works in
@@ -54,6 +59,9 @@ class TestVifibSlapComputerPartitionError(TestVifibSlapWebServiceMixin):
       LoginDefaultUser \
       CheckSalePackingListErrorText \
       Logout \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
+      Logout \
     '
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
@@ -72,6 +80,9 @@ class TestVifibSlapComputerPartitionError(TestVifibSlapWebServiceMixin):
       \
       LoginDefaultUser \
       CheckSalePackingListErrorText \
+      Logout \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
       Logout \
     '
     sequence_list.addSequenceString(sequence_string)
@@ -92,6 +103,9 @@ class TestVifibSlapComputerPartitionError(TestVifibSlapWebServiceMixin):
       LoginDefaultUser \
       CheckSalePackingListErrorText \
       Logout \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
+      Logout \
     '
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
@@ -110,6 +124,9 @@ class TestVifibSlapComputerPartitionError(TestVifibSlapWebServiceMixin):
       \
       LoginDefaultUser \
       CheckSalePackingListErrorText \
+      Logout \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
       Logout \
     '
     sequence_list.addSequenceString(sequence_string)
@@ -136,6 +153,9 @@ class TestVifibSlapComputerPartitionError(TestVifibSlapWebServiceMixin):
       LoginDefaultUser \
       CheckSalePackingListErrorText \
       Logout \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
+      Logout \
     '
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
@@ -154,6 +174,9 @@ class TestVifibSlapComputerPartitionError(TestVifibSlapWebServiceMixin):
       \
       LoginDefaultUser \
       CheckSalePackingListErrorText \
+      Logout \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
       Logout \
     '
     sequence_list.addSequenceString(sequence_string)
@@ -174,6 +197,9 @@ class TestVifibSlapComputerPartitionError(TestVifibSlapWebServiceMixin):
       LoginDefaultUser \
       CheckSalePackingListErrorText \
       Logout \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
+      Logout \
     '
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
@@ -193,6 +219,9 @@ class TestVifibSlapComputerPartitionError(TestVifibSlapWebServiceMixin):
       LoginDefaultUser \
       CheckSalePackingListErrorText \
       Logout \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
+      Logout \
     '
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
@@ -211,6 +240,9 @@ class TestVifibSlapComputerPartitionError(TestVifibSlapWebServiceMixin):
       \
       LoginDefaultUser \
       CheckSalePackingListErrorText \
+      Logout \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
       Logout \
     '
     sequence_list.addSequenceString(sequence_string)
@@ -237,6 +269,9 @@ class TestVifibSlapComputerPartitionError(TestVifibSlapWebServiceMixin):
       LoginDefaultUser \
       CheckSalePackingListErrorText \
       Logout \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
+      Logout \
     '
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
@@ -255,6 +290,9 @@ class TestVifibSlapComputerPartitionError(TestVifibSlapWebServiceMixin):
       LoginDefaultUser \
       CheckSalePackingListErrorText \
       CheckConfirmedSalePackingList \
+      Logout \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
       Logout \
     '
     sequence_list.addSequenceString(sequence_string)
@@ -279,6 +317,9 @@ class TestVifibSlapComputerPartitionError(TestVifibSlapWebServiceMixin):
       SelectCurrentlyUsedSalePackingListUid \
       CheckSalePackingListErrorText \
       Logout \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
+      Logout \
     '
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
@@ -300,6 +341,9 @@ class TestVifibSlapComputerPartitionError(TestVifibSlapWebServiceMixin):
       LoginDefaultUser \
       CheckSalePackingListErrorText \
       CheckStartedSalePackingList \
+      Logout \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
       Logout \
     '
     sequence_list.addSequenceString(sequence_string)
@@ -323,6 +367,9 @@ class TestVifibSlapComputerPartitionError(TestVifibSlapWebServiceMixin):
       LoginDefaultUser \
       CheckSalePackingListErrorText \
       CheckStoppedSalePackingList \
+      Logout \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
       Logout \
     '
     sequence_list.addSequenceString(sequence_string)
@@ -348,6 +395,9 @@ class TestVifibSlapComputerPartitionError(TestVifibSlapWebServiceMixin):
       CheckSalePackingListNoErrorText \
       CheckDeliveredSalePackingList \
       Logout \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
+      Logout \
     '
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
@@ -370,6 +420,9 @@ class TestVifibSlapComputerPartitionError(TestVifibSlapWebServiceMixin):
       CheckSalePackingListNoErrorText \
       SelectCurrentlyUsedSalePackingListUid \
       CheckSalePackingListErrorText \
+      Logout \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
       Logout \
     '
     sequence_list.addSequenceString(sequence_string)
@@ -396,6 +449,9 @@ class TestVifibSlapComputerPartitionError(TestVifibSlapWebServiceMixin):
       SelectCurrentlyUsedSalePackingListUid \
       CheckSalePackingListErrorText \
       Logout \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
+      Logout \
     '
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
@@ -420,6 +476,9 @@ class TestVifibSlapComputerPartitionError(TestVifibSlapWebServiceMixin):
       CheckStartedSalePackingList \
       SelectCurrentlyUsedSalePackingListUid \
       CheckSalePackingListErrorText \
+      Logout \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
       Logout \
     '
     sequence_list.addSequenceString(sequence_string)
@@ -447,6 +506,9 @@ class TestVifibSlapComputerPartitionError(TestVifibSlapWebServiceMixin):
       SelectCurrentlyUsedSalePackingListUid \
       CheckSalePackingListErrorText \
       Logout \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
+      Logout \
     '
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
@@ -473,6 +535,9 @@ class TestVifibSlapComputerPartitionError(TestVifibSlapWebServiceMixin):
       CheckDeliveredSalePackingList \
       SelectCurrentlyUsedSalePackingListUid \
       CheckSalePackingListErrorText \
+      Logout \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
       Logout \
     '
     sequence_list.addSequenceString(sequence_string)
@@ -503,6 +568,9 @@ class TestVifibSlapComputerPartitionError(TestVifibSlapWebServiceMixin):
       SlapLogout \
       LoginDefaultUser \
       CheckSalePackingListErrorText \
+      Logout \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
       Logout \
     '
     sequence_list.addSequenceString(sequence_string)

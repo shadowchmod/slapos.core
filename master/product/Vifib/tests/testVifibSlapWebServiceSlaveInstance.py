@@ -20,6 +20,9 @@ class TestVifibSlapWebServiceSlaveInstance(TestVifibSlapWebServiceMixin):
     Tic
     CheckComputerPartitionSaleOrderAggregatedList
     Logout
+    LoginERP5TypeTestCase
+    CheckSiteConsistency
+    Logout
     """
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
@@ -48,6 +51,10 @@ class TestVifibSlapWebServiceSlaveInstance(TestVifibSlapWebServiceMixin):
         Tic
         CheckSlaveInstanceNotReady
         Logout
+
+        LoginERP5TypeTestCase
+        CheckSiteConsistency
+        Logout
       """
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
@@ -74,6 +81,10 @@ class TestVifibSlapWebServiceSlaveInstance(TestVifibSlapWebServiceMixin):
 
     LoginDefaultUser
     CheckComputerPartitionSaleOrderAggregatedList
+    Logout
+
+    LoginERP5TypeTestCase
+    CheckSiteConsistency
     Logout
     """
     sequence_list.addSequenceString(sequence_string)
@@ -105,6 +116,10 @@ class TestVifibSlapWebServiceSlaveInstance(TestVifibSlapWebServiceMixin):
       CheckComputerPartitionInstanceHostingSalePackingListDelivered
       SlapLoginCurrentComputer
       CheckEmptySlaveInstanceListFromOneComputerPartition
+      Logout
+
+      LoginERP5TypeTestCase
+      CheckSiteConsistency
       Logout
     """
     sequence_list.addSequenceString(sequence_string)
@@ -161,6 +176,10 @@ class TestVifibSlapWebServiceSlaveInstance(TestVifibSlapWebServiceMixin):
       SoftwareInstanceAvailable
       Tic
       CheckSlaveInstanceListFromOneComputerPartition
+
+      LoginERP5TypeTestCase
+      CheckSiteConsistency
+      Logout
       """
 
     sequence_list.addSequenceString(sequence_string)
@@ -181,6 +200,10 @@ class TestVifibSlapWebServiceSlaveInstance(TestVifibSlapWebServiceMixin):
       ConfirmOrderedSaleOrderActiveSense
       Tic
       CheckSlaveInstanceNotReady
+      Logout
+
+      LoginERP5TypeTestCase
+      CheckSiteConsistency
       Logout
     """
     sequence_list.addSequenceString(sequence_string)
@@ -207,6 +230,10 @@ class TestVifibSlapWebServiceSlaveInstance(TestVifibSlapWebServiceMixin):
     Tic
     CheckSlaveInstanceReady
     CheckSlaveInstanceAllocationWithTwoDifferentSoftwareInstance
+
+    LoginERP5TypeTestCase
+    CheckSiteConsistency
+    Logout
     """
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
@@ -247,6 +274,10 @@ class TestVifibSlapWebServiceSlaveInstance(TestVifibSlapWebServiceMixin):
       Tic
       CheckSlaveInstanceAssociationWithSoftwareInstance
       SlapLogout
+
+      LoginERP5TypeTestCase
+      CheckSiteConsistency
+      Logout
     """
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
@@ -272,6 +303,10 @@ class TestVifibSlapWebServiceSlaveInstance(TestVifibSlapWebServiceMixin):
       Tic
       CheckTwoSlaveInstanceRequest
       SlapLogout
+
+      LoginERP5TypeTestCase
+      CheckSiteConsistency
+      Logout
     """
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
@@ -306,6 +341,10 @@ class TestVifibSlapWebServiceSlaveInstance(TestVifibSlapWebServiceMixin):
       SetDeliveryLineAmountEqualTwo
       CheckComputerPartitionInstanceHostingSalePackingListStarted
       Logout
+
+      LoginERP5TypeTestCase
+      CheckSiteConsistency
+      Logout
     """
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
@@ -336,6 +375,10 @@ class TestVifibSlapWebServiceSlaveInstance(TestVifibSlapWebServiceMixin):
       SetDeliveryLineAmountEqualTwo
       CheckComputerPartitionInstanceHostingSalePackingListDelivered
       CheckComputerPartitionInstanceSetupSalePackingListStopped
+
+      LoginERP5TypeTestCase
+      CheckSiteConsistency
+      Logout
     """
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
@@ -426,6 +469,10 @@ class TestVifibSlapWebServiceSlaveInstance(TestVifibSlapWebServiceMixin):
       Tic
       CheckComputerPartitionInstanceHostingSalePackingListStarted
       Logout
+
+      LoginERP5TypeTestCase
+      CheckSiteConsistency
+      Logout
     """
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
@@ -440,15 +487,130 @@ class TestVifibSlapWebServiceSlaveInstance(TestVifibSlapWebServiceMixin):
       LoginTestVifibCustomer
       RequestDestroySoftwareInstanceFromCurrentComputerPartition
       Tic
-      SetDeliveryLineAmountEqualOne
-      CheckComputerPartitionInstanceHostingSalePackingListStopped
+      SetDeliveryLineAmountEqualTwo
       CheckComputerPartitionInstanceCleanupSalePackingListConfirmed
-
       SlapLoginCurrentComputer
       SoftwareInstanceDestroyed
       Tic
-      CheckComputerPartitionInstanceHostingSalePackingListStopped
+      LoginDefaultUser
       CheckComputerPartitionInstanceCleanupSalePackingListDelivered
+      Logout
+
+      LoginERP5TypeTestCase
+      CheckSiteConsistency
+      Logout
+    """
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
+  def test_destroy_SoftwareInstance_after_request_SlaveInstance(self):
+    """
+      Check that destroying the Software Instance after request Slave
+      Instance with the same user, the Slave Instance must be destroyed
+      correctly
+    """
+    sequence_list = SequenceList()
+    sequence_string = self.prepare_install_requested_computer_partition_sequence_string + """
+      Tic
+      LoginTestVifibCustomer
+      PersonRequestSlaveInstance
+      SlapLogout
+
+      LoginDefaultUser
+      ConfirmOrderedSaleOrderActiveSense
+      Tic
+      Logout
+      LoginTestVifibCustomer
+      RequestDestroySoftwareInstanceFromCurrentComputerPartition
+      Tic
+      SetDeliveryLineAmountEqualTwo
+      LoginDefaultUser
+      CheckComputerPartitionInstanceCleanupSalePackingListConfirmed
+      SlapLoginCurrentComputer
+      SoftwareInstanceDestroyed
+      Tic
+      LoginDefaultUser
+      CheckComputerPartitionInstanceCleanupSalePackingListDelivered
+      Logout
+
+      LoginERP5TypeTestCase
+      CheckSiteConsistency
+      Logout
+    """
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
+  def test_destroy_SoftwareInstance_after_request_SlaveInstance_with_another_user(self):
+    """
+      Check that destroying the Software Instance after request Slave
+      Instance with the different user, the Slave Instance must be destroyed
+      correctly
+    """
+    sequence_list = SequenceList()
+    sequence_string = self.prepare_install_requested_computer_partition_sequence_string + """
+      Tic
+      LoginTestVifibCustomerA
+      PersonRequestSlaveInstance
+      SlapLogout
+
+      LoginDefaultUser
+      ConfirmOrderedSaleOrderActiveSense
+      Tic
+      Logout
+      LoginTestVifibCustomer
+      RequestDestroySoftwareInstanceFromCurrentComputerPartition
+      Tic
+      SetDeliveryLineAmountEqualTwo
+      LoginDefaultUser
+      CheckComputerPartitionInstanceCleanupSalePackingListConfirmed
+      SlapLoginCurrentComputer
+      SoftwareInstanceDestroyed
+      Tic
+      LoginDefaultUser
+      CheckComputerPartitionInstanceCleanupSalePackingListDelivered
+      Logout
+
+      LoginERP5TypeTestCase
+      CheckSiteConsistency
+      Logout
+    """
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
+  def test_destroy_SoftwareInstance_after_destroy_SlaveInstance(self):
+    """
+      Check that destroying the Software Instance after request destroy Slave
+      Instance, the request to destroy the Software Instance will not raise
+      exception
+    """
+    sequence_list = SequenceList()
+    sequence_string = self.prepare_install_requested_computer_partition_sequence_string + """
+      Tic
+      LoginTestVifibCustomer
+      PersonRequestSlaveInstance
+      SlapLogout
+
+      LoginDefaultUser
+      ConfirmOrderedSaleOrderActiveSense
+      Tic
+      Logout
+      LoginTestVifibCustomer
+      RequestSoftwareInstanceDestroy
+      Tic
+      RequestDestroySoftwareInstanceFromCurrentComputerPartition
+      Tic
+      SetDeliveryLineAmountEqualTwo
+      LoginDefaultUser
+      CheckComputerPartitionInstanceCleanupSalePackingListConfirmed
+      SlapLoginCurrentComputer
+      SoftwareInstanceDestroyed
+      Tic
+      LoginDefaultUser
+      CheckComputerPartitionInstanceCleanupSalePackingListDelivered
+      Logout
+
+      LoginERP5TypeTestCase
+      CheckSiteConsistency
       Logout
     """
     sequence_list.addSequenceString(sequence_string)
@@ -480,7 +642,7 @@ class TestVifibSlapWebServiceSlaveInstance(TestVifibSlapWebServiceMixin):
       Tic
       SlapLogout
       LoginTestVifibCustomer
-      RequestSlaveInstanceStop
+      RequestSoftwareInstanceStop
       Tic
       Logout
       LoginDefaultUser
@@ -502,9 +664,19 @@ class TestVifibSlapWebServiceSlaveInstance(TestVifibSlapWebServiceMixin):
       LoginDefaultUser
       CheckComputerPartitionInstanceHostingSalePackingListStopped
       Logout
+
+      LoginERP5TypeTestCase
+      CheckSiteConsistency
+      Logout
      """
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
+
+  def stepCheckComputerPartitionIsBusy(self, sequence, **kw):
+    computer_partition_uid = sequence["computer_partition_uid"]
+    computer_partition = self.portal.portal_catalog.getResultValue(
+        uid=computer_partition_uid)
+    self.assertEqual('busy', computer_partition.getSlapState())
 
   def test_SlaveInstance_request_destroy(self):
     """
@@ -524,6 +696,11 @@ class TestVifibSlapWebServiceSlaveInstance(TestVifibSlapWebServiceMixin):
       SlapLogout
       LoginDefaultUser
       CheckComputerPartitionInstanceCleanupSalePackingListConfirmed
+      CheckComputerPartitionIsBusy
+      Logout
+
+      LoginERP5TypeTestCase
+      CheckSiteConsistency
       Logout
     """
     sequence_list.addSequenceString(sequence_string)
@@ -554,6 +731,10 @@ class TestVifibSlapWebServiceSlaveInstance(TestVifibSlapWebServiceMixin):
       LoginTestVifibCustomer
       CheckSlaveInstanceSecurityWithDifferentCustomer
       SlapLogout
+
+      LoginERP5TypeTestCase
+      CheckSiteConsistency
+      Logout
     """
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
@@ -578,6 +759,10 @@ class TestVifibSlapWebServiceSlaveInstance(TestVifibSlapWebServiceMixin):
       SlapLoginCurrentComputer
       CheckSlaveInstanceListFromOneComputerPartition
       SlapLogout
+
+      LoginERP5TypeTestCase
+      CheckSiteConsistency
+      Logout
     """
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
@@ -608,6 +793,10 @@ class TestVifibSlapWebServiceSlaveInstance(TestVifibSlapWebServiceMixin):
       CheckSaleOrderFromSlaveInstanceAccessUsingSoftwareInstanceUser
       CheckHostingSubscriptionFromSlaveInstanceAccessUsingSoftwareInstanceUser
       SlapLogout
+
+      LoginERP5TypeTestCase
+      CheckSiteConsistency
+      Logout
     """
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
@@ -631,6 +820,237 @@ class TestVifibSlapWebServiceSlaveInstance(TestVifibSlapWebServiceMixin):
       SetConnectionXmlToSlaveInstance
       CheckConnectionXmlFromSlaveInstance
       CheckConnectionXmlFromSoftwareInstance
+
+      LoginERP5TypeTestCase
+      CheckSiteConsistency
+      Logout
+    """
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
+  def test_SlaveInstance_change_parameter_dict_after_request(self):
+    """
+      Check that request to change the parameter dict from a Slave Instance
+      will create update packing list correctly
+    """
+    sequence_list = SequenceList()
+    sequence_string = self.prepare_install_requested_computer_partition_sequence_string + """
+      Tic
+      SlapLoginCurrentComputer
+      SoftwareInstanceAvailable
+      Tic
+      CheckEmptySlaveInstanceListFromOneComputerPartition
+      SlapLoginCurrentSoftwareInstance
+      SelectEmptyRequestedParameterDict
+      SetRandomRequestedReference
+      RequestSlaveInstanceFromComputerPartition
+      SlapLogout
+      LoginDefaultUser
+      ConfirmOrderedSaleOrderActiveSense
+      Tic
+      Logout
+      SlapLoginCurrentSoftwareInstance
+      RequestSlaveInstanceFromComputerPartition
+      SlapLogout
+      SlapLoginCurrentComputer
+      SoftwareInstanceAvailable
+      Tic
+      LoginDefaultUser
+      StartSoftwareInstanceFromCurrentComputerPartition
+      Logout
+      Tic
+      SoftwareInstanceStarted
+      Tic
+      CheckEmptyComputerGetComputerPartitionCall
+      SlapLogout
+      SlapLoginCurrentSoftwareInstance
+      SelectRequestedParameterDictRequestedParameter
+      RequestSlaveInstanceFromComputerPartition
+      SlapLogout
+      LoginDefaultUser
+      CheckComputerPartitionInstanceUpdateSalePackingListConfirmed
+      Logout
+      SlapLoginCurrentComputer
+      CheckSuccessComputerGetComputerPartitionCall
+      SlapLogout
+
+      LoginERP5TypeTestCase
+      CheckSiteConsistency
+      Logout
+    """
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
+  def test_SlaveInstance_destroy_slave_with_SlaveInstance_stopped(self):
+    """
+      Check that request destroy from Software Instance when exists one Slave
+      Instance stopped, both instances will be destroyed correctly
+
+      Scenario:
+        1. request master instance
+        2. request Slave Instance
+        3. stop Slave Instance
+        4. request destroy the master instance
+      Both instances must be destroyed
+    """
+    sequence_list = SequenceList()
+    sequence_string = self.prepare_install_requested_computer_partition_sequence_string + """
+      Tic
+      SlapLoginCurrentComputer
+      SoftwareInstanceAvailable
+      Tic
+      CheckEmptySlaveInstanceListFromOneComputerPartition
+      SlapLoginCurrentSoftwareInstance
+      SelectEmptyRequestedParameterDict
+      SetRandomRequestedReference
+      RequestSlaveInstanceFromComputerPartition
+      SlapLogout
+      LoginDefaultUser
+      ConfirmOrderedSaleOrderActiveSense
+      Tic
+      Logout
+      SlapLoginCurrentSoftwareInstance
+      RequestSlaveInstanceFromComputerPartition
+      SlapLogout
+      SlapLoginCurrentComputer
+      SoftwareInstanceAvailable
+      Tic
+      LoginDefaultUser
+      StartSoftwareInstanceFromCurrentComputerPartition
+      Logout
+      Tic
+      SoftwareInstanceStarted
+      Tic
+      SlapLogout
+      LoginDefaultUser
+      SelectSlaveInstanceFromOneComputerPartition
+      SlapLoginCurrentSoftwareInstance
+      RequestSoftwareInstanceStop
+      Tic
+      SlaveInstanceStopped
+      Tic
+      CheckComputerPartitionInstanceHostingSalePackingListStarted
+      CheckComputerPartitionInstanceHostingSalePackingListDelivered
+      SetDeliveryLineAmountEqualTwo
+      CheckComputerPartitionInstanceSetupSalePackingListStopped
+      RequestDestroySoftwareInstanceFromCurrentComputerPartition
+      Tic
+      CheckComputerPartitionInstanceCleanupSalePackingListConfirmed
+      Logout
+      SlapLoginCurrentComputer
+      SoftwareInstanceDestroyed
+      Tic
+      LoginDefaultUser
+      CheckComputerPartitionIsFree
+      CheckComputerPartitionInstanceCleanupSalePackingListDelivered
+      CheckComputerPartitionInstanceSetupSalePackingListDelivered
+
+      LoginERP5TypeTestCase
+      CheckSiteConsistency
+      Logout
+    """
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
+  def test_Security_after_destroy_SoftwareInstance_with_different_user(self):
+    """
+      Check that destroying one Software Instance it will not destroy Slave
+      Instances that is not related to your Software Instance.
+      Scenario:
+
+        VifibCustomer         CustomerA
+           |                     | 
+        SoftwareInstance     SoftwareInstanceA (requestDestroy)
+           |                     | 
+        SlaveInstance        SlaveInstanceA
+
+     The Slave Instance related to Customer should not be destroyed
+    """
+    self.computer_partition_amount = 4
+    sequence_list = SequenceList()
+    sequence_string = self.prepare_install_requested_computer_partition_sequence_string + """
+      Tic
+      SlapLoginCurrentComputer
+      SoftwareInstanceAvailable
+      Tic
+      CheckEmptySlaveInstanceListFromOneComputerPartition
+      SlapLoginCurrentSoftwareInstance
+      SelectEmptyRequestedParameterDict
+      SetRandomRequestedReference
+      RequestSlaveInstanceFromComputerPartition
+      SlapLogout
+      LoginDefaultUser
+      ConfirmOrderedSaleOrderActiveSense
+      Tic
+      Logout
+      SlapLoginCurrentSoftwareInstance
+      RequestSlaveInstanceFromComputerPartition
+      SlapLogout
+      SlapLoginCurrentComputer
+      SoftwareInstanceAvailable
+      Tic 
+      LoginDefaultUser
+      SetDeliveryLineAmountEqualTwo
+      CheckComputerPartitionInstanceSetupSalePackingListStopped
+      CheckComputerPartitionInstanceHostingSalePackingListConfirmed """ + \
+      self.prepare_published_software_release + """
+      Tic
+      LoginTestVifibAdmin
+      RequestSoftwareInstallation
+      Tic
+      Logout
+
+      SlapLoginCurrentComputer
+      ComputerSoftwareReleaseAvailable
+      Tic
+      SlapLogout
+
+      LoginAsCustomerA
+      PersonRequestSoftwareInstance
+      Logout
+      LoginDefaultUser
+      ConfirmOrderedSaleOrderActiveSense
+      Tic
+      SetSelectedComputerPartition
+      SelectCurrentlyUsedSalePackingListUid
+      Logout
+      SlapLoginCurrentComputer
+      SoftwareInstanceAvailable
+      Tic
+      SlapLoginCurrentSoftwareInstance
+      SelectEmptyRequestedParameterDict
+      SetRandomRequestedReference
+      RequestSlaveInstanceFromComputerPartition
+      SlapLogout
+      LoginDefaultUser
+      ConfirmOrderedSaleOrderActiveSense
+      Tic
+      Logout
+      SlapLoginCurrentSoftwareInstance
+      RequestSlaveInstanceFromComputerPartition
+      Tic
+      SlapLogout
+      SlapLoginCurrentComputer
+      SoftwareInstanceAvailable
+      Tic
+      SlapLogout
+      LoginDefaultUser
+      SetDeliveryLineAmountEqualTwo
+      CheckComputerPartitionInstanceSetupSalePackingListStopped
+      CheckComputerPartitionInstanceHostingSalePackingListConfirmed
+      Logout
+      LoginAsCustomerA
+      RequestDestroySoftwareInstanceFromCurrentComputerPartition
+      Tic
+      Logout
+      LoginDefaultUser
+      SetDeliveryLineAmountEqualTwo
+      CheckComputerPartitionInstanceCleanupSalePackingListConfirmed
+      Logout
+
+      LoginERP5TypeTestCase
+      CheckSiteConsistency
+      Logout
     """
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)

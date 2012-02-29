@@ -8,11 +8,20 @@
  <portal_type id="Email">
   <item>VifibEmailConstraint</item>
  </portal_type>
+ <portal_type id="Hosting Subscription">
+  <item>VifibHostingSubscriptionConstraint</item>
+ </portal_type>
  <portal_type id="Internal Packing List">
   <item>VifibInternalPackingListConstraint</item>
  </portal_type>
  <portal_type id="Internal Packing List Line">
   <item>VifibInternalPackingListLineConstraint</item>
+ </portal_type>
+ <portal_type id="Open Sale Order">
+  <item>VifibOpenSaleOrderConstraint</item>
+ </portal_type>
+ <portal_type id="Open Sale Order Line">
+  <item>VifibOpenSaleOrderLineConstraint</item>
  </portal_type>
  <portal_type id="Person">
   <item>VifibPersonConstraint</item>
@@ -22,6 +31,21 @@
  </portal_type>
  <portal_type id="Purchase Packing List Line">
   <item>VifibPurchasePackingListLineConstraint</item>
+ </portal_type>
+ <portal_type id="Sale Invoice Transaction">
+  <item>VifibSaleInvoiceConstraint</item>
+ </portal_type>
+ <portal_type id="Sale Order">
+  <item>VifibSaleOrderConstraint</item>
+ </portal_type>
+ <portal_type id="Sale Order Line">
+  <item>VifibSaleOrderLineConstraint</item>
+ </portal_type>
+ <portal_type id="Sale Packing List">
+  <item>VifibSalePackingListConstraint</item>
+ </portal_type>
+ <portal_type id="Sale Packing List Line">
+  <item>VifibSalePackingListLineConstraint</item>
  </portal_type>
  <portal_type id="Software Product">
   <item>VifibSoftwareProductConstraint</item>

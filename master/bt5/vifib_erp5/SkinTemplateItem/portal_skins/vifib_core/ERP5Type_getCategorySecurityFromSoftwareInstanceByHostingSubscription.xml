@@ -68,11 +68,15 @@ if obj is None:\n
 \n
 portal = obj.getPortalObject()\n
 \n
-state_list = portal.getPortalCurrentInventoryStateList() + \\\n
+state_list = (\'stopped\',) + \\\n
   portal.getPortalReservedInventoryStateList() + \\\n
   portal.getPortalTransitInventoryStateList()\n
 \n
+resource_list = [portal.portal_preferences.getPreferredInstanceSetupResource(),\n
+  portal.portal_preferences.getPreferredInstanceHostingResource()]\n
+\n
 sale_packing_list_line = portal.portal_catalog.getResultValue(\n
+      default_resource_uid=[portal.restrictedTraverse(x).getUid() for x in resource_list],\n
       aggregate_uid=obj.getUid(),\n
       portal_type="Sale Packing List Line",\n
       simulation_state=state_list)\n
@@ -85,20 +89,26 @@ computer_partition = sale_packing_list_line.getAggregateValue(\n
 software_release = sale_packing_list_line.getAggregateValue(\n
   portal_type="Software Release")\n
 \n
-query = ComplexQuery(\n
-  Query(aggregate_relative_url=computer_partition.getRelativeUrl()),\n
-  Query(aggregate_relative_url=software_release.getRelativeUrl()),\n
-  operator="AND",\n
-)\n
 catalog_result = portal.portal_catalog(portal_type="Sale Packing List Line",\n
+  aggregate_portal_type="Slave Instance",\n
   simulation_state=state_list,\n
-  aggregate_relative_url=query,\n
+  limit=1,\n
+  default_aggregate_uid=[computer_partition.getUid(), software_release.getUid(), obj.getUid()]\n
 )\n
-for sale_packing_list_line in catalog_result:\n
-  software_instance = sale_packing_list_line.getAggregateValue(\n
-    portal_type="Software Instance")\n
-  if software_instance is not None:\n
-    return {"Auditor": [software_instance.getReference(),]}\n
+\n
+if len(catalog_result) == 0:\n
+  return catalog_result\n
+\n
+packing_list_line = portal.portal_catalog.getResultValue(\n
+    portal_type="Sale Packing List Line",\n
+    aggregate_portal_type="Software Instance",\n
+    simulation_state=state_list,\n
+    default_aggregate_uid=[computer_partition.getUid(), software_release.getUid()])\n
+\n
+if packing_list_line is not None:\n
+  software_instance = packing_list_line.getAggregateValue(\n
+     portal_type="Software Instance")\n
+  return {"Auditor": [software_instance.getReference(),]}\n
 \n
 return category_list\n
 </string> </value>

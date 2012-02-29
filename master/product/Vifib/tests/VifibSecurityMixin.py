@@ -48,7 +48,6 @@ class testVifibSecurityMixin(SecurityTestCase, testVifibMixin):
   Mixin class for security unit test of Vifib.
   """
   run_all_test = 1
-  login = PortalTestCase.login
 
   def createManagerAndLogin(self):
     """
@@ -191,7 +190,6 @@ class testVifibSecurityMixin(SecurityTestCase, testVifibMixin):
     self.logMessage("Create Manager")
     self.createManagerAndLogin()
     self.createVifibDocumentList()
-    self.setSystemPreference()
     self.validateRule()
     self.logMessage("Create Administrator")
     self.createAdministratorUser()
