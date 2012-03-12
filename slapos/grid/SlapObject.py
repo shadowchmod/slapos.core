@@ -245,7 +245,7 @@ class Partition(object):
     gid = stat_info.st_gid
     return (uid, gid)
 
-  def install(self):
+  def install(self, cleanup=False):
     """ Creates configuration file from template in software_path, then
     installs the software partition with the help of buildout
     """
@@ -287,6 +287,10 @@ class Partition(object):
     )
     open(config_location, 'w').write(buildout_text)
     os.chmod(config_location, 0640)
+    cleanup_location = os.path.join(self.instance_path, 'buildout_cleanup.cfg')
+    open(cleanup_location, 'w').write(
+      "[buildout]\nextends = buildout.cfg\nparts =")
+    os.chmod(cleanup_location, 0640)
     # Try to find the best possible buildout:
     #  *) if software_root/bin/bootstrap exists use this one to bootstrap
     #     locally
@@ -300,6 +304,7 @@ class Partition(object):
       bootstrap_candidate_list = []
     uid, gid = self.getUserGroupId()
     os.chown(config_location, -1, int(gid))
+    os.chown(cleanup_location, -1, int(gid))
     if len(bootstrap_candidate_list) == 0:
       buildout_binary = os.path.join(self.software_path, 'bin', 'buildout')
       self.logger.warning("Falling back to default buildout %r" %
@@ -342,8 +347,13 @@ class Partition(object):
         'sbin')], console=self.console)
       buildout_binary = os.path.join(self.instance_path, 'sbin', 'buildout')
     # Launches buildout
-    utils.launchBuildout(self.instance_path,
-                   buildout_binary, console=self.console)
+    if cleanup:
+      utils.launchBuildout(self.instance_path,
+                     buildout_binary, console=self.console,
+                     additional_buildout_parametr_list=['-c buildout_cleanup.cfg'])
+    else:
+      utils.launchBuildout(self.instance_path,
+                     buildout_binary, console=self.console)
     # Generates supervisord configuration file from template
     self.logger.info("Generating supervisord config file from template...")
     # check if CP/etc/run exists and it is a directory

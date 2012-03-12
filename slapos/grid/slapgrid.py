@@ -527,16 +527,29 @@ class Slapgrid(object):
     clean_run = True
     for computer_partition in self.getComputerPartitionList():
       computer_partition_id = computer_partition.getId()
+      instance_path = os.path.join(self.instance_root,
+          computer_partition_id)
       try:
         software_url = computer_partition.getSoftwareRelease().getURI()
       except NotFoundError:
         software_url = None
+      try:
+        descriptor = open(os.path.join(instance_path, '.srurl'), 'r')
+        old_software_url = descriptor.read()
+      except IOError:
+        old_software_url = software_url
+      finally:
+        try:
+          descriptor.close()
+        except Exception:
+          pass
       software_path = os.path.join(self.software_root,
             getSoftwareUrlHash(software_url))
+      old_software_path = os.path.join(self.software_root,
+            getSoftwareUrlHash(old_software_url))
       local_partition = Partition(
         software_path=software_path,
-        instance_path=os.path.join(self.instance_root,
-            computer_partition.getId()),
+        instance_path=instance_path,
         supervisord_partition_configuration_path=os.path.join(
           self.supervisord_configuration_directory, '%s.conf' %
           computer_partition_id),
@@ -548,16 +561,36 @@ class Slapgrid(object):
         software_release_url=software_url,
         certificate_repository_path=self.certificate_repository_path,
         console=self.console, buildout=self.buildout)
+      old_local_partition = Partition(
+        software_path=old_software_path,
+        instance_path=instance_path,
+        supervisord_partition_configuration_path=os.path.join(
+          self.supervisord_configuration_directory, '%s.conf' %
+          computer_partition_id),
+        supervisord_socket=self.supervisord_socket,
+        computer_partition=computer_partition,
+        computer_id=self.computer_id,
+        partition_id=computer_partition_id,
+        server_url=self.master_url,
+        software_release_url=old_software_url,
+        certificate_repository_path=self.certificate_repository_path,
+        console=self.console, buildout=self.buildout)
       # There are no conditions to try to instanciate partition
       try:
         computer_partition_state = computer_partition.getState()
         if computer_partition_state == "started":
+          if local_partition.software_release_url != \
+             old_local_partition.software_release_url:
+            old_local_partition.install(cleanup=True)
           local_partition.install()
           computer_partition.available()
           local_partition.start()
           self._checkPromises(computer_partition)
           computer_partition.started()
         elif computer_partition_state == "stopped":
+          if local_partition.software_release_url != \
+             old_local_partition.software_release_url:
+            old_local_partition.install(cleanup=True)
           local_partition.install()
           computer_partition.available()
           local_partition.stop()
@@ -597,6 +630,16 @@ class Slapgrid(object):
         exception = traceback.format_exc()
         logger.error(exception)
         computer_partition.error(exception)
+      try:
+        descriptor = open(os.path.join(instance_path, '.srurl'), 'w')
+        descriptor.write(software_url)
+      except IOError:
+        pass
+      finally:
+        try:
+          descriptor.close()
+        except Exception:
+          pass
 
     logger.info("Finished computer partitions...")
     return clean_run
