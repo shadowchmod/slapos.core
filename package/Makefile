@@ -55,7 +55,7 @@ cleanup-build-stamp: build
 	rm -fv $(BUILD_DIRECTORY)/parts/gettext/share/gettext/archive.dir.tar.gz
 
 	# Removing documentations
-	find $(BUILD_DIRECTORY) -regextype posix-extended -type d \
+	find $(BUILD_DIRECTORY)/parts -regextype posix-extended -type d \
 		-iregex '.*/(gtk-)?(doc[s]?|man|info|test[s]?)$$' \
 		-prune -exec rm -rfv '{}' ';'
 
