@@ -1,0 +1,16 @@
+#!/usr/bin/make -f
+# -*- makefile -*-
+
+%:
+	dh $@
+
+override_dh_auto_install:
+	dh_auto_install -- TARGET_DIRECTORY=/opt/slapos
+
+override_dh_makeshlibs:
+	dh_makeshlibs -n
+
+override_dh_builddeb:
+	# Using lzma rather than xz because the latter is only
+	# available from dpkg-dev >= 1.15.5
+	dh_builddeb -- -Zlzma -z9

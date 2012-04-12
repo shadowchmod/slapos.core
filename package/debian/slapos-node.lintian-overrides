@@ -1,0 +1,8 @@
+python-script-but-no-python-dep
+dir-or-file-in-opt
+wrong-path-for-interpreter
+embedded-javascript-library
+dir-or-file-in-srv
+binary-or-shlib-defines-rpath
+embedded-library
+lzma-deb-archive

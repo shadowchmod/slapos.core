@@ -1,0 +1,7 @@
+[buildout]
+extends =
+  http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-%RECIPE_VERSION%:/component/slapos/buildout.cfg
+
+# There is no index page for netifaces anymore...
+find-links +=
+  http://www.mirrorservice.org/sites/www.ibiblio.org/gentoo/distfiles/netifaces-0.6.tar.gz

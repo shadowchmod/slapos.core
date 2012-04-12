@@ -1,0 +1,5 @@
+recursive-include slapprepare/template *.in
+include slapprepare/script/slapos
+include slapprepare/script/slapos_firstboot
+include slapprepare/script/slapos.service
+include slapprepare/connect.sh
