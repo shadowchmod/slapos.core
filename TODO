@@ -1,0 +1,8 @@
+ * Fetch slapos.cfg from web (slapos.cfg.example)
+ * slapprepare should be integrated into slapos.core egg
+ * buildout.cfg.in should not include anything but the extend.
+ * RPM : Add build dependency to chrpath
+ * Current Makefile has a bug : supervisor (and others) rely on some files from
+   build directory. So, of course, when build directory does not exist, it 
+   crashes.
+ * RPM : should we depend on python?
