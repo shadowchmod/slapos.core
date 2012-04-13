@@ -47,6 +47,7 @@ BuildRequires: gcc-c++, make, patch, wget, python, chrpath, python-distribute
 
 Requires: bridge-utils, python, gcc-c++, make, patch, wget
 
+AutoReqProv: no
 
 
 %description
@@ -82,14 +83,16 @@ zcat $RPM_SOURCE_DIR/slapprepare-%{unmangled_version}.tar.gz | tar -xvf -
 %build
 cd $RPM_BUILD_DIR/slapprepare-%{unmangled_version}
 python setup.py build
-cd $RPM_BUILD_DIR/slapos.node-%{unmangled_version}+%{slapversion}+0
-make
+#cd $RPM_BUILD_DIR/slapos.node-%{unmangled_version}+%{slapversion}+0
+#make
 
 %install
-cd $RPM_BUILD_DIR/slapos.node-%{unmangled_version}+%{slapversion}+0
-make DESTDIR=$RPM_BUILD_ROOT install 
+#cd $RPM_BUILD_DIR/slapos.node-%{unmangled_version}+%{slapversion}+0
+#make DESTDIR=$RPM_BUILD_ROOT install 
 cd $RPM_BUILD_DIR/slapprepare-%{unmangled_version}
 python setup.py install --single-version-externally-managed -O1 --root=$RPM_BUILD_ROOT --record=INSTALLED_FILES
+mkdir -p $RPM_BUILD_ROOT/opt/
+cp -r /opt/slapos $RPM_BUILD_ROOT/opt/
 
 %files
 /
