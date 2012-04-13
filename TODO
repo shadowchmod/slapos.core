@@ -1,5 +1,6 @@
  * Fetch slapos.cfg from web (slapos.cfg.example)
  * slapprepare should be integrated into slapos.core egg
+ * slaprepare should not be responsible of installing slapos boot script
  * buildout.cfg.in should not include anything but the extend.
  * RPM : Add build dependency to chrpath
  * Current Makefile has a bug : supervisor (and others) rely on some files from
