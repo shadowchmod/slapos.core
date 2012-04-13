@@ -1,4 +1,4 @@
- * Fetch slapos.cfg from web (slapos.cfg.example)
+ * Fetch slapos.cfg from web (slapos.cfg.example from tag in slapos.core)
  * slapprepare should be integrated into slapos.core egg
  * slaprepare should not be responsible of installing slapos boot script
  * buildout.cfg.in should not include anything but the extend.
@@ -7,3 +7,4 @@
    build directory. So, of course, when build directory does not exist, it 
    crashes.
  * RPM : should we depend on python?
+ * slapos rpm should not be stored on /etc
