@@ -374,6 +374,10 @@ def slapprepare():
     if config.server:
       get_ssh(temp_directory)
     slapbuilder(config)
+
+    if not config.one_disk:
+      _call(['/etc/init.d/slapos_firstboot'])
+    
     
     if config.server :
       _call(['systemctl','enable','slapos.service'])
