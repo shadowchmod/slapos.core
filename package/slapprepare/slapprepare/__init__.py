@@ -155,37 +155,38 @@ def slapbuilder(config):
   mount_dir_path = config.mount_dir_path
   try:    
     # Create slapos configuration directory if needed
-    slap_configuration_directory = os.path.normpath('/'.join([mount_dir_path,
-                                              config.slapos_configuration]))
-    slap_configuration_file = os.path.normpath('/'.join([
-        slap_configuration_directory, 'slapos.cfg']))
-    if not os.path.exists(slap_configuration_directory):
-      print "Creating directory: %s" % slap_configuration_directory
-      if not dry_run:
-        os.mkdir(slap_configuration_directory, 0711)
-
-    certificate_repository_path = os.path.join('/opt/slapos/pki')
-    key_file = os.path.join(slap_configuration_directory, 'computer.key') 
-    cert_file = os.path.join(slap_configuration_directory, 'computer.crt')
-    for (src, dst) in [(config.key_file, key_file), (config.cert_file,
-        cert_file)]:
-      print "Coping %r to %r, and setting minimum privileges" % (src, dst)
-      if not dry_run:
-        shutil.copy(src, dst)
-        os.chmod(dst, 0600)
-        os.chown(dst, 0, 0)
- 
-    # Put slapgrid configuration file
-    print "Creating slap configuration: %s" % slap_configuration_file
-    if not dry_run:
-      open(slap_configuration_file, 'w').write(
-        pkg_resources.resource_stream(__name__,
-                                      'template/slapos.cfg.in').read() % dict(
-          computer_id=config.computer_id, master_url=config.master_url,
-          key_file=key_file, cert_file=cert_file,
-          certificate_repository_path=certificate_repository_path,
-          partition_amount=config.partition_amount
-          ))
+    if not config.no_certificates:
+    	slap_configuration_directory = os.path.normpath('/'.join([mount_dir_path,
+    	                                          config.slapos_configuration]))
+    	slap_configuration_file = os.path.normpath('/'.join([
+    	    slap_configuration_directory, 'slapos.cfg']))
+    	if not os.path.exists(slap_configuration_directory):
+    	  print "Creating directory: %s" % slap_configuration_directory
+    	  if not dry_run:
+    	    os.mkdir(slap_configuration_directory, 0711)
+    	
+    	certificate_repository_path = os.path.join('/opt/slapos/pki')
+    	key_file = os.path.join(slap_configuration_directory, 'computer.key') 
+    	cert_file = os.path.join(slap_configuration_directory, 'computer.crt')
+    	for (src, dst) in [(config.key_file, key_file), (config.cert_file,
+    	    cert_file)]:
+    	  print "Coping %r to %r, and setting minimum privileges" % (src, dst)
+    	  if not dry_run:
+    	    shutil.copy(src, dst)
+    	    os.chmod(dst, 0600)
+    	    os.chown(dst, 0, 0)
+    	
+    	# Put slapgrid configuration file
+    	print "Creating slap configuration: %s" % slap_configuration_file
+    	if not dry_run:
+    	  open(slap_configuration_file, 'w').write(
+    	    pkg_resources.resource_stream(__name__,
+    	                                  'template/slapos.cfg.in').read() % dict(
+    	      computer_id=config.computer_id, master_url=config.master_url,
+    	      key_file=key_file, cert_file=cert_file,
+    	      certificate_repository_path=certificate_repository_path,
+    	      partition_amount=config.partition_amount
+    	      ))
     if config.server :
       slapserver(config)
   finally:
@@ -305,7 +306,7 @@ class Config:
                 dry_run,
                 computer_id, key_path, master_url, 
                 cert_file, key_file,
-                temp_dir):
+                temp_dir, no_certificates):
     """
     Set options given by parameters.
     """
@@ -320,7 +321,7 @@ class Config:
     self.cert_file = cert_file
     self.mount_dir_path = mount_dir_path
     self.temp_dir=temp_dir
-
+    self.no_certificates=no_certificates
 
   def userConfig(self):
     self.server = get_yes_no ("Is this a Suse Server (12.1 or higher) for SlapOS?")
@@ -330,15 +331,18 @@ class Config:
         self.one_disk = not get_yes_no ("Do you want to use SlapOS with a second disk")
       else:
         self.one_disk=True
-    self.partition_amount=raw_input("""Number of SlapOS partitions for this computer? """)
+    if not self.no_certificates:
+      self.partition_amount=raw_input("""Number of SlapOS partitions for this computer? """)
 
   def displayUserConfig(self):
+    print "Computer reference : %s" %self.computer_id
     print "Suse Server for SlapOS : %s" % self.server
     if self.server:
       print "Virtual Machine: %s" % self.virtual
       if not self.virtual:
         print "Use a second disk: %s" % (not self.one_disk)
-    print "Number of partition: %s" % (self.partition_amount)
+    if not self.no_certificates:
+      print "Number of partition: %s" % (self.partition_amount)
 
 
 def slapprepare():
@@ -347,11 +351,16 @@ def slapprepare():
     if not os.path.exists(temp_directory):
       print "Creating directory: %s" % temp_directory
       os.mkdir(temp_directory, 0711)
-    sh_path = pkg_resources.resource_filename(__name__,'connect.sh')
-    os.chmod(sh_path, 0755)
-    _call([sh_path])
-    parse_certificates(temp_directory)
-    COMP = get_computer_name(temp_directory)
+    no_certificates=get_yes_no("Automatically register new computer to Vifib?")
+    
+    if not no_certificates:
+      sh_path = pkg_resources.resource_filename(__name__,'connect.sh')
+      os.chmod(sh_path, 0755)
+      _call([sh_path])
+      parse_certificates(temp_directory)
+      COMP = get_computer_name(temp_directory)
+    else:
+      COMP = get_computer_name('/etc/slapos/')
     config= Config()
     config.setConfig(mount_dir_path = '/',
                      slapos_configuration='/etc/slapos/',
@@ -363,7 +372,9 @@ def slapprepare():
                      master_url="""https://slap.vifib.com""",
                      cert_file=os.path.join(temp_directory,'computer.crt'), 
                      key_file=os.path.join(temp_directory,'computer.key'),
-                     temp_dir=temp_directory)
+                     temp_dir=temp_directory,
+                     no_certificates=no_certificates)
+    
     while 1:
       config.userConfig()
       print "\nThis your configuration: \n"
