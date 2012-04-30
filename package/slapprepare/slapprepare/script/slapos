@@ -146,8 +146,17 @@ while [[ $? != 0 ]]; do
     # if slapformat fail more than 10 time the script is restarted
 done
 echo "done."
+i=1
 echo -n "Banging..."
 /opt/slapos/bin/bang -m "Rebooted" /etc/slapos/slapos.cfg
+while [[ $? != 0 ]]; do
+    sleep $(($i*60))
+    if [[ $i < 20 ]]; then
+	let i++
+    fi
+    echo "Retrying Bang"
+    /opt/slapos/bin/bang -m "Rebooted" /etc/slapos/slapos.cfg
+done
 echo "done."
 
 # Enable noop scheduler for disk which have SLAPOS labeled partition
