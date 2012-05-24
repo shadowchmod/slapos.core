@@ -1,12 +1,14 @@
 #!/usr/bin/make -f
 # -*- makefile -*-
 
-VERSION = 0.23
-RECIPE_VERSION = 0.72
+VERSION = 0.25
+RECIPE_VERSION = 0.87
 
 INSTALL_DIRECTORY = $(DESTDIR)/opt/slapos
 TARGET_DIRECTORY = /opt/slapos
-BUILD_DIRECTORY := $(shell pwd)/build
+BUILD_ROOT_DIRECTORY := $(shell pwd)/build
+BUILD_DIRECTORY := $(BUILD_ROOT_DIRECTORY)$(TARGET_DIRECTORY)
+PATCHES_DIRECTORY := $(shell pwd)/patches
 BOOTSTRAP_URL := 'http://svn.zope.org/*checkout*/zc.buildout/trunk/bootstrap/bootstrap.py'
 
 build: build-stamp
@@ -15,7 +17,11 @@ build-stamp:
 
 	mkdir -p $(BUILD_DIRECTORY)
 
-	sed "s/%RECIPE_VERSION%/$(RECIPE_VERSION)/" \
+	sed -e "s#%RECIPE_VERSION%#$(RECIPE_VERSION)#g" \
+		-e "s#%PATCHES_DIRECTORY%#$(PATCHES_DIRECTORY)#g" \
+		-e "s#%TARGET_DIRECTORY%#$(TARGET_DIRECTORY)#g" \
+		-e "s#%BUILD_ROOT_DIRECTORY%#$(BUILD_ROOT_DIRECTORY)#g" \
+		-e "s#%BUILD_DIRECTORY%#$(BUILD_DIRECTORY)#g" \
 		buildout.cfg.in > $(BUILD_DIRECTORY)/buildout.cfg
 
 	cd $(BUILD_DIRECTORY) && \
@@ -44,7 +50,7 @@ cleanup-build-stamp: build
 		$(BUILD_DIRECTORY)/parts/*-hooks-download/
 
 	# Removing locales, terminfo and base_completion.d directories
-	find $(BUILD_DIRECTORY) -type d \
+	find $(BUILD_DIRECTORY) \( -type d -o -type l \) \
 		\( -name locale -o -name terminfo -o -name bash_completion.d \) \
 		-prune -exec rm -rfv '{}' ';'
 
@@ -55,7 +61,7 @@ cleanup-build-stamp: build
 	rm -fv $(BUILD_DIRECTORY)/parts/gettext/share/gettext/archive.dir.tar.gz
 
 	# Removing documentations
-	find $(BUILD_DIRECTORY)/parts -regextype posix-extended -type d \
+	find $(BUILD_DIRECTORY) -regextype posix-extended -type d \
 		-iregex '.*/(gtk-)?(doc[s]?|man|info|test[s]?)$$' \
 		-prune -exec rm -rfv '{}' ';'
 
@@ -128,8 +134,8 @@ install: all
 		echo "No path to fix."
 
 	set -e; \
-	for f in `find $(INSTALL_DIRECTORY) -type f \( -executable -o -name '*.so' \)`; do \
-		if file $$f | grep -Eq '.*ELF.*(executable|shared).*'; then \
+	for f in `find $(INSTALL_DIRECTORY) \( -type f -o -type l \) \( -executable -o -name "*.so" \)`; do \
+		if file -L $$f | grep -Eq '.*ELF.*(executable|shared).*'; then \
 			OLD_RPATH="`chrpath $$f|awk -F'RPATH=' '{print $$2}'|sed 's#$(BUILD_DIRECTORY)#$(TARGET_DIRECTORY)#g' 2> /dev/null`"; \
 			if [ -n "$$OLD_RPATH" ]; then \
 				chrpath -r "$$OLD_RPATH" $$f; \
@@ -138,7 +144,7 @@ install: all
 	done
 
 clean:
-	rm -rf $(BUILD_DIRECTORY)
+	rm -rf $(BUILD_ROOT_DIRECTORY)
 	rm -f *-stamp
 
 .PHONY: build cleanup-build strip-binaries all install clean
