@@ -1,12 +1,13 @@
 #!/usr/bin/make -f
 # -*- makefile -*-
 
-VERSION = 0.24
+VERSION = 0.25
 RECIPE_VERSION = 0.87
 
 INSTALL_DIRECTORY = $(DESTDIR)/opt/slapos
 TARGET_DIRECTORY = /opt/slapos
-BUILD_DIRECTORY := $(shell pwd)/build
+BUILD_ROOT_DIRECTORY := $(shell pwd)/build
+BUILD_DIRECTORY := $(BUILD_ROOT_DIRECTORY)$(TARGET_DIRECTORY)
 PATCHES_DIRECTORY := $(shell pwd)/patches
 
 #Use to get path of buildout correct
@@ -145,8 +146,9 @@ install: all
 		fi; \
 	done
 
+
 clean:
-	rm -rf $(BUILD_DIRECTORY)
+	rm -rf $(BUILD_ROOT_DIRECTORY)
 	rm -f *-stamp
 
 .PHONY: build cleanup-build strip-binaries all install clean

@@ -1,13 +1,17 @@
 #!/bin/bash
 
-VERSION=0.24
+VERSION=0.25
 RECIPE_VERSION=0.87
-BUILD_DIRECTORY="$(pwd)/build"
+TARGET_DIRECTORY=/opt/slapos
+BUILD_ROOT_DIRECTORY="$(pwd)/build"
+BUILD_DIRECTORY=$BUILD_ROOT_DIRECTORY$TARGET_DIRECTORY
 BOOTSTRAP_URL='http://svn.zope.org/*checkout*/zc.buildout/trunk/bootstrap/bootstrap.py'
 
 #./configure --prefix=/opt/slapos/parts/<NAME>
 
-echo 'Preparing source tarball (recipe version: $(RECIPE_VERSION))'
+echo "Preparing source tarball (recipe version: $RECIPE_VERSION)"
+echo " Build Directory: $BUILD_DIRECTORY "
+echo " Buildroot Directory: $BUILD_ROOT_DIRECTORY "
 
 mkdir -p $BUILD_DIRECTORY
 mkdir $BUILD_DIRECTORY/extends-cache
@@ -15,7 +19,8 @@ mkdir $BUILD_DIRECTORY/download-cache
 
 echo "$BUILD_DIRECTORY" > ./original_directory
 
-sed "s/\%RECIPE_VERSION\%/$RECIPE_VERSION/g;s/\%PATCHES_DIRECTORY\%/$PATCHES_DIRECTORY/g" buildout.cfg.in > $BUILD_DIRECTORY/buildout.cfg
+
+sed  "s/\%RECIPE_VERSION\%/$RECIPE_VERSION/g;s|\%PATCHES_DIRECTORY\%|$PATCHES_DIRECTORY|g;s|\%TARGET_DIRECTORY\%|$TARGET_DIRECTORY|g;s|\%BUILD_ROOT_DIRECTORY\%|$BUILD_ROOT_DIRECTORY|g;s|\%BUILD_DIRECTORY\%|$BUILD_DIRECTORY|g" buildout.cfg.in > $BUILD_DIRECTORY/buildout.cfg 
 
 
 # Build first time to get download-cache and extends-cache ready
@@ -51,7 +56,8 @@ find $BUILD_DIRECTORY -type d -empty -prune -exec rmdir '{}' ';'
 
 
 # Prepare buildout 
-sed "s/%RECIPE_VERSION%/$RECIPE_VERSION/g;s/%PATCHES_DIRECTORY%/$PATCHES_DIRECTORY/g" buildout.cfg.in > $BUILD_DIRECTORY/buildout.cfg
+sed  "s/\%RECIPE_VERSION\%/$RECIPE_VERSION/g;s|\%PATCHES_DIRECTORY\%|$PATCHES_DIRECTORY|g;s|\%TARGET_DIRECTORY\%|$TARGET_DIRECTORY|g;s|\%BUILD_ROOT_DIRECTORY\%|$BUILD_ROOT_DIRECTORY|g;s|\%BUILD_DIRECTORY\%|$BUILD_DIRECTORY|g" buildout.cfg.in > $BUILD_DIRECTORY/buildout.cfg 
+
 
 
 cd $BUILD_DIRECTORY && \
