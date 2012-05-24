@@ -2,6 +2,7 @@
 
 VERSION=0.25
 RECIPE_VERSION=0.87
+
 TARGET_DIRECTORY=/opt/slapos
 BUILD_ROOT_DIRECTORY="$(pwd)/build"
 BUILD_DIRECTORY=$BUILD_ROOT_DIRECTORY$TARGET_DIRECTORY
@@ -17,7 +18,6 @@ mkdir -p $BUILD_DIRECTORY
 mkdir $BUILD_DIRECTORY/extends-cache
 mkdir $BUILD_DIRECTORY/download-cache
 
-echo "$BUILD_DIRECTORY" > ./original_directory
 
 
 sed  "s/\%RECIPE_VERSION\%/$RECIPE_VERSION/g;s|\%PATCHES_DIRECTORY\%|$PATCHES_DIRECTORY|g;s|\%TARGET_DIRECTORY\%|$TARGET_DIRECTORY|g;s|\%BUILD_ROOT_DIRECTORY\%|$BUILD_ROOT_DIRECTORY|g;s|\%BUILD_DIRECTORY\%|$BUILD_DIRECTORY|g" buildout.cfg.in > $BUILD_DIRECTORY/buildout.cfg 
@@ -27,9 +27,9 @@ sed  "s/\%RECIPE_VERSION\%/$RECIPE_VERSION/g;s|\%PATCHES_DIRECTORY\%|$PATCHES_DI
 cd $BUILD_DIRECTORY
 wget $BOOTSTRAP_URL -O bootstrap.py
 python -S bootstrap.py #&& \
-    ./bin/buildout -v
+    ./bin/buildout
 
-cd $BUILD_DIRECTORY/..
+cd $BUILD_ROOT_DIRECTORY/..
 
 # remove all files from build keeping only caches
 echo "Deleting unecessary files to reduce source tarball size"
@@ -56,7 +56,7 @@ find $BUILD_DIRECTORY -type d -empty -prune -exec rmdir '{}' ';'
 
 
 # Prepare buildout 
-sed  "s/\%RECIPE_VERSION\%/$RECIPE_VERSION/g;s|\%PATCHES_DIRECTORY\%|$PATCHES_DIRECTORY|g;s|\%TARGET_DIRECTORY\%|$TARGET_DIRECTORY|g;s|\%BUILD_ROOT_DIRECTORY\%|$BUILD_ROOT_DIRECTORY|g;s|\%BUILD_DIRECTORY\%|$BUILD_DIRECTORY|g" buildout.cfg.in > $BUILD_DIRECTORY/buildout.cfg 
+sed  "s/\%RECIPE_VERSION\%/$RECIPE_VERSION/g;s|\%PATCHES_DIRECTORY\%|$PATCHES_DIRECTORY|g;s|\%TARGET_DIRECTORY\%|$TARGET_DIRECTORY|g;s|\%BUILD_ROOT_DIRECTORY\%|$BUILD_ROOT_DIRECTORY|g;s|\%BUILD_DIRECTORY\%|$BUILD_DIRECTORY|g" $BUILD_ROOT_DIRECTORY/../buildout.cfg.in > $BUILD_DIRECTORY/buildout.cfg 
 
 
 
