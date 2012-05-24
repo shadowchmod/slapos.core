@@ -1,8 +1,8 @@
 #!/usr/bin/make -f
 # -*- makefile -*-
 
-VERSION = 0.25
-RECIPE_VERSION = 0.87
+VERSION = %VERSION%
+RECIPE_VERSION = %RECIPE_VERSION%
 
 INSTALL_DIRECTORY = $(DESTDIR)/opt/slapos
 TARGET_DIRECTORY = /opt/slapos
