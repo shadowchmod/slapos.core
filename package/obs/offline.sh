@@ -18,7 +18,7 @@ mkdir -p $BUILD_DIRECTORY
 mkdir $BUILD_DIRECTORY/extends-cache
 mkdir $BUILD_DIRECTORY/download-cache
 
-
+echo "$BUILD_ROOT_DIRECTORY" > ./original_directory
 
 sed  "s/\%RECIPE_VERSION\%/$RECIPE_VERSION/g;s|\%PATCHES_DIRECTORY\%|$PATCHES_DIRECTORY|g;s|\%TARGET_DIRECTORY\%|$TARGET_DIRECTORY|g;s|\%BUILD_ROOT_DIRECTORY\%|$BUILD_ROOT_DIRECTORY|g;s|\%BUILD_DIRECTORY\%|$BUILD_DIRECTORY|g" buildout.cfg.in > $BUILD_DIRECTORY/buildout.cfg 
 
@@ -69,6 +69,7 @@ cd $BUILD_DIRECTORY && \
 # package installation) and static libraries
 find $BUILD_DIRECTORY -regextype posix-extended -type f \
 	-iregex '.*/*\.(py[co]|[l]?a|exe|bat)$$' -exec rm -fv '{}' ';'
+
 
 
 

@@ -18,9 +18,9 @@ BOOTSTRAP_URL := 'http://svn.zope.org/*checkout*/zc.buildout/trunk/bootstrap/boo
 build: build-stamp
 build-stamp:
 
-	@echo "Fixing buildout path to $(BUILD_DIRECTORY) rather than $(ORIGINAL_DIRECTORY) for buildout"
-	grep -rIl '$(ORIGINAL_DIRECTORY)' $(BUILD_DIRECTORY) 2> /dev/null | \
-		xargs sed -i 's#$(ORIGINAL_DIRECTORY)#$(BUILD_DIRECTORY)#g' || \
+	@echo "Fixing buildout path to $(BUILD_ROOT_DIRECTORY) rather than $(ORIGINAL_DIRECTORY) for buildout"
+	grep -rIl '$(ORIGINAL_DIRECTORY)' $(BUILD_ROOT_DIRECTORY) 2> /dev/null | \
+		xargs sed -i 's#$(ORIGINAL_DIRECTORY)#$(BUILD_ROOT_DIRECTORY)#g' || \
 		echo "No path to fix."
 
 	@echo 'Preparing source tarball (recipe version: $(RECIPE_VERSION))'
