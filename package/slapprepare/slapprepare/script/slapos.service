@@ -7,7 +7,7 @@ After=basic.target network.target remote-fs.target
 
 [Service]
 Type=simple
-ExecStart=/etc/slapos/slapos
+ExecStart=/etc/opt/slapos/slapos
 StandardOutput=tty
 TTYPath=/dev/console
 

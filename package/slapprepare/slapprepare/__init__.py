@@ -149,46 +149,43 @@ def get_ssh(temp_dir):
   ssh_file.close()
   return 0
 
-# Base Function to configure slapos in /etc/slapos
-def slapbuilder(config):
+# Base Function to configure slapos in /etc/opt/slapos
+def slapconfig(config):
   dry_run = config.dry_run
   mount_dir_path = config.mount_dir_path
   try:    
     # Create slapos configuration directory if needed
-    if not config.no_certificates:
-    	slap_configuration_directory = os.path.normpath('/'.join([mount_dir_path,
-    	                                          config.slapos_configuration]))
-    	slap_configuration_file = os.path.normpath('/'.join([
-    	    slap_configuration_directory, 'slapos.cfg']))
-    	if not os.path.exists(slap_configuration_directory):
-    	  print "Creating directory: %s" % slap_configuration_directory
-    	  if not dry_run:
-    	    os.mkdir(slap_configuration_directory, 0711)
-    	
-    	certificate_repository_path = os.path.join('/opt/slapos/pki')
-    	key_file = os.path.join(slap_configuration_directory, 'computer.key') 
-    	cert_file = os.path.join(slap_configuration_directory, 'computer.crt')
-    	for (src, dst) in [(config.key_file, key_file), (config.cert_file,
-    	    cert_file)]:
-    	  print "Coping %r to %r, and setting minimum privileges" % (src, dst)
-    	  if not dry_run:
-    	    shutil.copy(src, dst)
-    	    os.chmod(dst, 0600)
-    	    os.chown(dst, 0, 0)
-    	
-    	# Put slapgrid configuration file
-    	print "Creating slap configuration: %s" % slap_configuration_file
-    	if not dry_run:
-    	  open(slap_configuration_file, 'w').write(
-    	    pkg_resources.resource_stream(__name__,
-    	                                  'template/slapos.cfg.in').read() % dict(
-    	      computer_id=config.computer_id, master_url=config.master_url,
-    	      key_file=key_file, cert_file=cert_file,
-    	      certificate_repository_path=certificate_repository_path,
-    	      partition_amount=config.partition_amount
-    	      ))
-    if config.server :
-      slapserver(config)
+    slap_configuration_directory = os.path.normpath('/'.join([mount_dir_path,
+                                              config.slapos_configuration]))
+    slap_configuration_file = os.path.normpath('/'.join([
+        slap_configuration_directory, 'slapos.cfg']))
+    if not os.path.exists(slap_configuration_directory):
+      print "Creating directory: %s" % slap_configuration_directory
+      if not dry_run:
+        os.mkdir(slap_configuration_directory, 0711)
+    
+    certificate_repository_path = os.path.join('/opt/slapos/pki')
+    key_file = os.path.join(slap_configuration_directory, 'computer.key') 
+    cert_file = os.path.join(slap_configuration_directory, 'computer.crt')
+    for (src, dst) in [(config.key_file, key_file), (config.cert_file,
+        cert_file)]:
+      print "Coping %r to %r, and setting minimum privileges" % (src, dst)
+      if not dry_run:
+        shutil.copy(src, dst)
+        os.chmod(dst, 0600)
+        os.chown(dst, 0, 0)
+    
+    # Put slapgrid configuration file
+    print "Creating slap configuration: %s" % slap_configuration_file
+    if not dry_run:
+      open(slap_configuration_file, 'w').write(
+        pkg_resources.resource_stream(__name__,
+                                      'template/slapos.cfg.in').read() % dict(
+          computer_id=config.computer_id, master_url=config.master_url,
+          key_file=key_file, cert_file=cert_file,
+          certificate_repository_path=certificate_repository_path,
+          partition_amount=config.partition_amount
+          ))
   finally:
     print "SlapOS configuration: DONE"
     return 0
@@ -235,7 +232,7 @@ def slapserver(config):
                                       'template/ifcfg-br0.in').read())
 
     # Creating boot scripts
-    path = os.path.join(mount_dir_path, 'etc', 'slapos', 'slapos')
+    path = os.path.join(config.slapos_configuration, 'slapos')
     print "Creating %r" % path
     if not dry_run:
       open(path, 'w').write(pkg_resources.resource_stream(__name__,
@@ -276,7 +273,7 @@ def slapserver(config):
 
     # Removing line in slapos script activating kvm in virtual 
     if config.virtual:
-      path = os.path.join(mount_dir_path, 'etc', 'slapos','slapos')
+      path = os.path.join(config.slapos_configuration,'slapos')
       _call(['sed','-i',"$d",path],dry_run=dry_run)
       _call(['sed','-i',"$d",path],dry_run=dry_run)
       
@@ -306,7 +303,7 @@ class Config:
                 dry_run,
                 computer_id, key_path, master_url, 
                 cert_file, key_file,
-                temp_dir, no_certificates):
+                temp_dir, certificates, server):
     """
     Set options given by parameters.
     """
@@ -321,17 +318,17 @@ class Config:
     self.cert_file = cert_file
     self.mount_dir_path = mount_dir_path
     self.temp_dir=temp_dir
-    self.no_certificates=no_certificates
+    self.certificates=certificates
+    self.server=server
 
   def userConfig(self):
-    self.server = get_yes_no ("Is this a Suse Server (12.1 or higher) for SlapOS?")
     if self.server :
       self.virtual = get_yes_no("Is this a virtual Machine?")
       if not self.virtual:
         self.one_disk = not get_yes_no ("Do you want to use SlapOS with a second disk")
       else:
         self.one_disk=True
-    if not self.no_certificates:
+    if self.certificates:
       self.partition_amount=raw_input("""Number of SlapOS partitions for this computer? """)
 
   def displayUserConfig(self):
@@ -341,7 +338,7 @@ class Config:
       print "Virtual Machine: %s" % self.virtual
       if not self.virtual:
         print "Use a second disk: %s" % (not self.one_disk)
-    if not self.no_certificates:
+    if self.certificates:
       print "Number of partition: %s" % (self.partition_amount)
 
 
@@ -351,19 +348,22 @@ def slapprepare():
     if not os.path.exists(temp_directory):
       print "Creating directory: %s" % temp_directory
       os.mkdir(temp_directory, 0711)
-    no_certificates=get_yes_no("Automatically register new computer to Vifib?")
-    
-    if not no_certificates:
+
+    # Set preference by asking user
+    is_server = get_yes_no ("Is this a Suse Server (12.1 or higher) for SlapOS?")
+    certificates = get_yes_no("Automatically register new computer to Vifib?")
+    if certificates:
       sh_path = pkg_resources.resource_filename(__name__,'connect.sh')
       os.chmod(sh_path, 0755)
       _call([sh_path])
       parse_certificates(temp_directory)
       COMP = get_computer_name(temp_directory)
     else:
-      COMP = get_computer_name('/etc/slapos/')
+      COMP = get_computer_name('/etc/opt/slapos/')
+
     config= Config()
     config.setConfig(mount_dir_path = '/',
-                     slapos_configuration='/etc/slapos/',
+                     slapos_configuration='/etc/opt/slapos/',
                      hostname_path='/etc/HOSTNAME',
                      host_path='/etc/hosts',
                      dry_run=False,
@@ -373,7 +373,8 @@ def slapprepare():
                      cert_file=os.path.join(temp_directory,'computer.crt'), 
                      key_file=os.path.join(temp_directory,'computer.key'),
                      temp_dir=temp_directory,
-                     no_certificates=no_certificates)
+                     certificates=certificates,
+                     server=is_server)
     
     while 1:
       config.userConfig()
@@ -382,15 +383,16 @@ def slapprepare():
       if get_yes_no("\nDo you confirm?"):
         break
 
+    # Prepare Slapos Configuration
+    if config.certificates:  
+      slapconfig(config)
+
+    # Prepare SlapOS Suse Server confuguration
     if config.server:
       get_ssh(temp_directory)
-    slapbuilder(config)
-
-    if not config.one_disk:
-      _call(['/etc/init.d/slapos_firstboot'])
-    
-    
-    if config.server :
+      slapserver(config)
+      if not config.one_disk:
+        _call(['/etc/init.d/slapos_firstboot'])
       _call(['systemctl','enable','slapos.service'])
       _call(['systemctl','start','slapos.service'])
 
