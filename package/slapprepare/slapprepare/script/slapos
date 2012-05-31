@@ -36,6 +36,8 @@ done
 IPV6CHECK=ipv6.google.com
 IPV4CHECK=google.com
 IPV6WAITTIME=5
+SLAPVPN="ipv6_interface = tapVPN"
+
 
 # Test ipv4/ipv6 connectivity and if not working use openvpn 
 # and wait for it to be ready
@@ -59,24 +61,20 @@ do
     ping6 -c 2 $IPV6CHECK
 done
 
-if [[ $? != 0 ]]; then
+if [ $? != 0 ] || [ -f /etc/opt/slapos/openvpn-needed ]; then
     echo """ Starting openVPN """
     /etc/init.d/openvpn start
-    ping6 -c 2 $IPV6CHECK
+    ping6 -I tapVPN -c 2 $IPV6CHECK
     while [[ $? != 0 ]]; do
-        ping6 -c 2 $IPV6CHECK
+        ping6 -I tapVPN -c 2 $IPV6CHECK
     done
-    # Ask slapos to use openvpn as ipv6 provider      
-    if [ ! -f /etc/opt/slapos/openvpn-needed ]; then
-        touch /etc/opt/slapos/openvpn-needed
-        echo "ipv6_interface = tapVPN" >> /etc/opt/slapos/slapos.cfg
-    fi
+    # Ask slapos to use openvpn as ipv6 provider
+    sed -i "/${SLAPVPN}/ s/# *//" /etc/opt/slapos/slapos.cfg
+    # Use tapVPN as default interface for ipv6 traffic
+    ip route add ::/0 dev tapVPN
 else
-    # OpenVPN not needed delete last line of slapos.cfg if OpenVPN has been used before                                                                                     
-    if [ -f /etc/opt/slapos/openvpn-needed ]; then
-        rm /etc/opt/slapos/openvpn-needed
-        sed -i '$d' /etc/opt/slapos/slapos.cfg
-    fi
+    # OpenVPN not needed, comment line about he_ipv6 (if not ailready done)
+    sed -i "/${SLAPVPN}/ s/^\([^#]\)/#\1/g" /etc/opt/slapos/slapos.cfg
 fi
 
 # set random root password

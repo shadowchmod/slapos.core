@@ -15,3 +15,4 @@ partition_base_name = slappart
 user_base_name = slapuser
 tap_base_name = slaptap
 ipv4_local_network = 10.0.0.0/16
+#ipv6_interface = tapVPN
