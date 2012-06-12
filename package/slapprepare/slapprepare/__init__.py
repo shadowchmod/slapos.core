@@ -236,13 +236,15 @@ def slapserver(config):
     print "Creating %r" % path
     if not dry_run:
       open(path, 'w').write(pkg_resources.resource_stream(__name__,
-                                                          'script/%s' % 'slapos').read())
+                                                          'script/%s' % 'slapos').read() % dict(
+          slapos_configuration=config.slapos_configuration))
       os.chmod(path, 0755)
     path = os.path.join(mount_dir_path, 'etc', 'systemd', 'system','slapos.service')
     print "Creating %r" % path
     if not dry_run:
       open(path, 'w').write(pkg_resources.resource_stream(__name__,
-                                                          'script/%s' % 'slapos.service').read())
+                                                          'script/%s' % 'slapos.service').read() % dict(
+          slapos_configuration=config.slapos_configuration))
       os.chmod(path, 0755)
   
     # Writing ssh key
@@ -358,12 +360,18 @@ def slapprepare():
       _call([sh_path])
       parse_certificates(temp_directory)
       COMP = get_computer_name(temp_directory)
+      slapos_configuration='/etc/opt/slapos/'
     else:
-      COMP = get_computer_name('/etc/opt/slapos/')
+      # Check for config file in /etc/slapos/
+      if os.path.exists('/etc/slapos/slapos.cfg'):
+        slapos_configuration='/etc/slapos/'
+      else:
+        slapos_configuration='/etc/opt/slapos/'
+      COMP = get_computer_name(slapos_configuration)
 
     config= Config()
     config.setConfig(mount_dir_path = '/',
-                     slapos_configuration='/etc/opt/slapos/',
+                     slapos_configuration=slapos_configuration,
                      hostname_path='/etc/HOSTNAME',
                      host_path='/etc/hosts',
                      dry_run=False,
