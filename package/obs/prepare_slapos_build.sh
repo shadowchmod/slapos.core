@@ -1,7 +1,7 @@
 #!/bin/bash
 
 VERSION=0.25
-RECIPE_VERSION=0.87
+RECIPE_VERSION=0.88
 
 CURRENT_RECIPE_VERSION=$(cat ./slapos-recipe-version)
 CURRENT_VERSION=$(cat ./slapos-version)
@@ -16,8 +16,8 @@ set -e
 
 
 # Prepare Makefile and offline script
-sed "s/\%RECIPE_VERSION\%/$RECIPE_VERSION/g;s/\%VERSION\%/$VERSION/g" $TEMPLATES_DIRECTORY/Makefile.in > $CURRENT_DIRECTORY/$SLAPOS_DIRECTORY/slapos/Makefile
-sed "s/\%RECIPE_VERSION\%/$RECIPE_VERSION/g;s/\%VERSION\%/$VERSION/g" $TEMPLATES_DIRECTORY/offline.sh.in > $CURRENT_DIRECTORY/$SLAPOS_DIRECTORY/slapos/offline.sh
+sed "s/\%RECIPE_VERSION\%/$RECIPE_VERSION/g;s/\%VERSION\%/$VERSION/g" $TEMPLATES_DIRECTORY/Makefile.in > $CURRENT_DIRECTORY/$SLAPOS_FORMER_DIRECTORY/slapos/Makefile
+sed "s/\%RECIPE_VERSION\%/$RECIPE_VERSION/g;s/\%VERSION\%/$VERSION/g" $TEMPLATES_DIRECTORY/offline.sh.in > $CURRENT_DIRECTORY/$SLAPOS_FORMER_DIRECTORY/slapos/offline.sh
 
 
 # Prepare Download Cache for SlapOS 
@@ -26,9 +26,9 @@ rm -rf build/
 bash offline.sh
 
 
-# Rename folder and Prepare tarball
+ Rename folder and Prepare tarball
 cd $CURRENT_DIRECTORY
-if [[ $RECIPE_VERSION != $CURRENT_RECIPE_VERSION ]]
+if [ $RECIPE_VERSION != $CURRENT_RECIPE_VERSION ]
 then
 mv $SLAPOS_FORMER_DIRECTORY $SLAPOS_DIRECTORY
 fi
