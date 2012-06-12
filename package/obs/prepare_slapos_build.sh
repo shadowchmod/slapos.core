@@ -26,7 +26,7 @@ rm -rf build/
 bash offline.sh
 
 
- Rename folder and Prepare tarball
+# Rename folder and Prepare tarball
 cd $CURRENT_DIRECTORY
 if [ $RECIPE_VERSION != $CURRENT_RECIPE_VERSION ]
 then
