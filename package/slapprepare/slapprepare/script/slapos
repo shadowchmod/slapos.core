@@ -65,6 +65,7 @@ done
 if [ $? != 0 ] || [ -f $SLAPOS_CONFIGURATION/openvpn-needed ]; then
     echo """ Starting openVPN """
     /etc/init.d/openvpn start
+    sleep 5
     ping6 -I tapVPN -c 2 $IPV6CHECK
     while [[ $? != 0 ]]; do
         ping6 -I tapVPN -c 2 $IPV6CHECK
@@ -72,7 +73,8 @@ if [ $? != 0 ] || [ -f $SLAPOS_CONFIGURATION/openvpn-needed ]; then
     # Ask slapos to use openvpn as ipv6 provider
     sed -i "/${SLAPVPN}/ s/# *//" $SLAPOS_CONFIGURATION/slapos.cfg
     # Use tapVPN as default interface for ipv6 traffic
-    ip route add ::/0 dev tapVPN
+    /sbin/ip -6 route del default dev br0
+    sleep 2
 else
     # OpenVPN not needed, comment line about he_ipv6 (if not ailready done)
     sed -i "/${SLAPVPN}/ s/^\([^#]\)/#\1/g" $SLAPOS_CONFIGURATION/slapos.cfg
@@ -145,7 +147,6 @@ while [[ $? != 0 ]]; do
     fi
     echo "Retrying slapformat"
     /opt/slapos/bin/slapformat --verbose --console $SLAPOS_CONFIGURATION/slapos.cfg
-    # if slapformat fail more than 10 time the script is restarted
 done
 echo "done."
 i=1
