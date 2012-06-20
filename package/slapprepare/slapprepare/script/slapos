@@ -149,18 +149,6 @@ while [[ $? != 0 ]]; do
     /opt/slapos/bin/slapformat --verbose --console $SLAPOS_CONFIGURATION/slapos.cfg
 done
 echo "done."
-i=1
-echo -n "Banging..."
-/opt/slapos/bin/bang -m "Rebooted" $SLAPOS_CONFIGURATION/slapos.cfg
-while [[ $? != 0 ]]; do
-    sleep $(($i*60))
-    if [[ $i < 20 ]]; then
-	let i++
-    fi
-    echo "Retrying Bang"
-    /opt/slapos/bin/bang -m "Rebooted" $SLAPOS_CONFIGURATION/slapos.cfg
-done
-echo "done."
 
 # Enable noop scheduler for disk which have SLAPOS labeled partition
 disk=`blkid -L SLAPOS | sed -r -e 's/(\/dev\/|[0-9]*$)//g'`
