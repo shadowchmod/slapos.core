@@ -115,6 +115,18 @@ def get_computer_name(temp_dir):
       return line[k:i]
   return -1
 
+# Return OpenSUSE version if it is SuSE
+def suse_version(): 
+  if os.path.exists('/etc/SuSE-release') :
+    with open('/etc/SuSE-release') as f :
+      for line in f:
+        if "VERSION" in line:
+          dist = line.split()
+          return float(dist[2])
+  else :
+    return 0
+ 
+
 
 # Function to get ssh key
 def get_ssh(temp_dir):
@@ -359,7 +371,11 @@ def slapprepare():
       os.mkdir(temp_directory, 0711)
 
     # Set preference by asking user
-    is_server = get_yes_no ("Is this a Suse Server (12.1 or higher) for SlapOS?")
+    if suse_version() >= 12.1 :
+      is_server = get_yes_no ("Is this a Suse Server for SlapOS?")
+    else :
+      is_server = False
+
     certificates = get_yes_no("Automatically register new computer to Vifib?")
     if certificates:
       sh_path = pkg_resources.resource_filename(__name__,'connect.sh')
@@ -429,6 +445,4 @@ def slapprepare():
   sys.exit(return_code)
 
 
-if __name__ == "__main__" :
-  slapprepare()
-  
+
