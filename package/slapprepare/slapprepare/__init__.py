@@ -374,6 +374,8 @@ class Config:
     print "Computer reference : %s" %self.computer_id
     print "Suse Server for SlapOS : %s" % self.server
     if self.server:
+      print "Ipv6 over VPN: %s" % self.force_vpn
+      print "Remote ssh access: %s" % self.need_ssh
       print "Virtual Machine: %s" % self.virtual
       if not self.virtual:
         print "Use a second disk: %s" % (not self.one_disk)
@@ -461,3 +463,4 @@ def slapprepare():
     print "Deleting directory: %s" % temp_directory
     _call(['rm','-rf',temp_directory])
   sys.exit(return_code)
+
