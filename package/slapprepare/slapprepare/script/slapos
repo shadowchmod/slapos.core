@@ -65,7 +65,7 @@ done
 if [ $? != 0 ] || [ -f $SLAPOS_CONFIGURATION/openvpn-needed ]; then
     echo """ Starting openVPN """
     /etc/init.d/openvpn start
-    sleep 5
+    sleep 10
     ping6 -I tapVPN -c 2 $IPV6CHECK
     while [[ $? != 0 ]]; do
         ping6 -I tapVPN -c 2 $IPV6CHECK

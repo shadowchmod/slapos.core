@@ -274,6 +274,10 @@ def slapserver(config):
         os.chown(ssh_key_path, uid, gid)
         os.chmod(ssh_key_path, 0600)
 
+    # Put file to  force VPN if user asked
+    if config.force_vpn :
+      open(os.path.join(config.slapos_configuration,'openvpn-needed'),'w')
+
     # Removing line in slapos script activating kvm in virtual 
     if config.virtual:
       path = os.path.join(config.slapos_configuration,'slapos')
@@ -332,8 +336,9 @@ class Config:
         self.one_disk = not get_yes_no ("Do you want to use SlapOS with a second disk?")
       else:
         self.one_disk=True
+      self.force_vpn = get_yes_no ("Do you want to force the use of vpn to provide ipv6?") 
     if self.certificates:
-      self.partition_amount=raw_input("""Number of SlapOS partitions for this computer?""")
+      self.partition_amount=raw_input("""Number of SlapOS partitions for this computer? """)
 
   def displayUserConfig(self):
     print "Computer reference : %s" %self.computer_id
