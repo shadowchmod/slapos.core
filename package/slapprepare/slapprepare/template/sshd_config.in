@@ -1,6 +1,6 @@
 PermitRootLogin yes
 AllowUsers root
-AddressFamily inet6
+AddressFamily any
 
 RSAAuthentication yes
 PubkeyAuthentication yes
