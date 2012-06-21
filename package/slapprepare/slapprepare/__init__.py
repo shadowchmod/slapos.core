@@ -248,30 +248,31 @@ def slapserver(config):
       os.chmod(path, 0755)
   
     # Writing ssh key
-    user_path = os.path.normpath('/'.join([mount_dir_path, 'root']))
-    ssh_key_directory = os.path.normpath('/'.join([user_path, '.ssh']))
-    ssh_key_path = os.path.normpath('/'.join([ssh_key_directory,
-                                              'authorized_keys']))
-    stat_info = os.stat(user_path)
-    uid, gid = stat_info.st_uid, stat_info.st_gid
-    ssh_key_directory = os.path.dirname(ssh_key_path)
-    if not os.path.exists(ssh_key_directory):
-      print "Creating ssh directory: %s" % ssh_key_directory
+    if config.need_ssh :
+      user_path = os.path.normpath('/'.join([mount_dir_path, 'root']))
+      ssh_key_directory = os.path.normpath('/'.join([user_path, '.ssh']))
+      ssh_key_path = os.path.normpath('/'.join([ssh_key_directory,
+                                                'authorized_keys']))
+      stat_info = os.stat(user_path)
+      uid, gid = stat_info.st_uid, stat_info.st_gid
+      ssh_key_directory = os.path.dirname(ssh_key_path)
+      if not os.path.exists(ssh_key_directory):
+        print "Creating ssh directory: %s" % ssh_key_directory
+        if not dry_run:
+          os.mkdir(ssh_key_directory)
       if not dry_run:
-        os.mkdir(ssh_key_directory)
-    if not dry_run:
-      print "Setting uid:gid of %r to %s:%s" % (ssh_key_directory, uid, gid)
-      os.chown(ssh_key_directory, uid, gid)
-      os.chmod(ssh_key_directory, 0700)
-  
-    print "Creating file: %s" % ssh_key_path
-    if not dry_run:
-      shutil.copyfile(config.key_path, ssh_key_path)
+        print "Setting uid:gid of %r to %s:%s" % (ssh_key_directory, uid, gid)
+        os.chown(ssh_key_directory, uid, gid)
+        os.chmod(ssh_key_directory, 0700)
       
-    if not dry_run:
-      print "Setting uid:gid of %r to %s:%s" % (ssh_key_path, uid, gid)
-      os.chown(ssh_key_path, uid, gid)
-      os.chmod(ssh_key_path, 0600)
+      print "Creating file: %s" % ssh_key_path
+      if not dry_run:
+        open(ssh_key_path,'a').write(''.join(open(config.key_path,'r').read()))
+        
+      if not dry_run:
+        print "Setting uid:gid of %r to %s:%s" % (ssh_key_path, uid, gid)
+        os.chown(ssh_key_path, uid, gid)
+        os.chmod(ssh_key_path, 0600)
 
     # Removing line in slapos script activating kvm in virtual 
     if config.virtual:
@@ -325,13 +326,14 @@ class Config:
 
   def userConfig(self):
     if self.server :
+      self.need_ssh = get_yes_no("Do you want a remote ssh access?")
       self.virtual = get_yes_no("Is this a virtual Machine?")
       if not self.virtual:
-        self.one_disk = not get_yes_no ("Do you want to use SlapOS with a second disk")
+        self.one_disk = not get_yes_no ("Do you want to use SlapOS with a second disk?")
       else:
         self.one_disk=True
     if self.certificates:
-      self.partition_amount=raw_input("""Number of SlapOS partitions for this computer? """)
+      self.partition_amount=raw_input("""Number of SlapOS partitions for this computer?""")
 
   def displayUserConfig(self):
     print "Computer reference : %s" %self.computer_id
@@ -397,7 +399,8 @@ def slapprepare():
 
     # Prepare SlapOS Suse Server confuguration
     if config.server:
-      get_ssh(temp_directory)
+      if config.need_ssh :
+        get_ssh(temp_directory)
       slapserver(config)
       if not config.one_disk:
         _call(['/etc/init.d/slapos_firstboot'])
