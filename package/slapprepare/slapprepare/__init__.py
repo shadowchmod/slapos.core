@@ -306,13 +306,15 @@ log /var/log/openvpn.log""" % dict(
 
     # Put file to  force VPN if user asked
     if config.force_vpn :
-      open(os.path.join(config.slapos_configuration,'openvpn-needed'),'w')
+      if not dry_run:
+        open(os.path.join(config.slapos_configuration,'openvpn-needed'),'w')
 
     # Removing line in slapos script activating kvm in virtual 
     if config.virtual:
-      path = os.path.join(config.slapos_configuration,'slapos')
-      _call(['sed','-i',"$d",path],dry_run=dry_run)
-      _call(['sed','-i',"$d",path],dry_run=dry_run)
+      if not dry_run:
+        path = os.path.join(config.slapos_configuration,'slapos')
+        _call(['sed','-i',"$d",path],dry_run=dry_run)
+        _call(['sed','-i',"$d",path],dry_run=dry_run)
       
     # Adding slapos_firstboot in case of MultiDisk usage    
     if not config.one_disk :
@@ -328,7 +330,8 @@ log /var/log/openvpn.log""" % dict(
         path = os.path.join(mount_dir_path, 'etc', 'init.d', script)
         if os.path.exists(path):
           print "Removing %r" % path
-          os.remove(path)
+          if not dry_run:
+            os.remove(path)
   finally:
     print "SlapOS Image configuration: DONE"
     return 0
