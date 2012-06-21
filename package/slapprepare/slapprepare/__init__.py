@@ -258,6 +258,24 @@ def slapserver(config):
                                                           'script/%s' % 'slapos.service').read() % dict(
           slapos_configuration=config.slapos_configuration))
       os.chmod(path, 0755)
+
+    # Preparing retry slapformat script
+    path = os.path.join(config.slapos_configuration,'run_slapformat')    
+    print "Creating %r" % path
+    if not dry_run:
+      open(path, 'w').write(pkg_resources.resource_stream(__name__,
+                                                          'script/%s' % 'run_slapformat').read() % dict(
+          slapos_configuration=config.slapos_configuration))
+      os.chmod(path, 0755)
+    path = os.path.join(mount_dir_path,'etc','openvpn','client.conf')    
+    print "Creating %r" % path
+    if not dry_run:
+      open(path, 'a').write("""script-security 3 system
+up-restart
+up '/bin/bash %(slapos_configuration)s/run_slapformat & echo foo'
+log /var/log/openvpn.log""" % dict(
+          slapos_configuration=config.slapos_configuration))
+      os.chmod(path, 0755)
   
     # Writing ssh key
     if config.need_ssh :
@@ -443,6 +461,3 @@ def slapprepare():
     print "Deleting directory: %s" % temp_directory
     _call(['rm','-rf',temp_directory])
   sys.exit(return_code)
-
-
-
