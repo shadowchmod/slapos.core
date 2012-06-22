@@ -196,7 +196,8 @@ def slapconfig(config):
           computer_id=config.computer_id, master_url=config.master_url,
           key_file=key_file, cert_file=cert_file,
           certificate_repository_path=certificate_repository_path,
-          partition_amount=config.partition_amount
+          partition_amount=config.partition_amount,
+          interface=config.interface
           ))
   finally:
     print "SlapOS configuration: DONE"
@@ -370,8 +371,11 @@ class Config:
       else:
         self.one_disk=True
       self.force_vpn = get_yes_no ("Do you want to force the use of vpn to provide ipv6?") 
+      self.interface = "bridge_name = br0"
     if self.certificates:
-      self.partition_amount=raw_input("""Number of SlapOS partitions for this computer? """)
+      self.partition_amount = raw_input("""Number of SlapOS partitions for this computer? """)
+      if not self.server :
+        self.interface = "interface_name = "+ ''.join(raw_input(""" Name of interface used to access internet (eth0, wlan0, br0...)? """))
 
   def displayUserConfig(self):
     print "Computer reference : %s" %self.computer_id
@@ -384,7 +388,8 @@ class Config:
         print "Use a second disk: %s" % (not self.one_disk)
     if self.certificates:
       print "Number of partition: %s" % (self.partition_amount)
-
+      if not self.server :
+        print (self.interface)
 
 def slapprepare():
   try:
@@ -466,4 +471,3 @@ def slapprepare():
     print "Deleting directory: %s" % temp_directory
     _call(['rm','-rf',temp_directory])
   sys.exit(return_code)
-
