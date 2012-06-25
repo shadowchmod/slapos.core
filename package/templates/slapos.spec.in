@@ -42,9 +42,16 @@ URL: http://www.slapos.org/
 Vendor: Vifib
 Packager: Arnaud Fontaine <arnaud.fontaine@nexedi.com>, Cédric Le Ninivin <cedric.leninivin@tiolive.com>
 
+
+%if 0%{?suse_version} == 1210
 BuildRequires: gcc-c++, make, patch, wget, python, chrpath, python-distribute
 
-Requires: bridge-utils, python, gcc-c++, make, patch, wget
+Requires: bridge-utils, python, gcc-c++, make, patch, wget, python-distribute
+%else
+BuildRequires: gcc-c++, make, patch, wget, python, chrpath, python-setuptools
+
+Requires: bridge-utils, python, gcc-c++, make, patch, wget, python-setuptools
+%endif
 
 AutoReqProv: no
 
