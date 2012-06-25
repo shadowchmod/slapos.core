@@ -51,7 +51,23 @@ osc add $SLAPOS_DIRECTORY.tar.gz
 sed "s/\%RECIPE_VERSION\%/$RECIPE_VERSION/g;s/\%VERSION\%/$VERSION/g" $TEMPLATES_DIRECTORY/slapos.spec.in > slapos.spec
 osc add slapos.spec
 
-# Upload new Package
+##################### Prepare configuration file for .deb ############
+# Add entry to changelog
+if [ $RECIPE_VERSION != $CURRENT_RECIPE_VERSION ]
+then
+cd $TEMPLATES_DIRECTORY/debian
+dch -pm -v $VERSION+$RECIPE_VERSION+0  --check-dirname-level=0 "New version of slapos ($VERSION+$RECIPE_VERSION)"
+fi
+cd $TEMPLATES_DIRECTORY 
+tar -czf debian.tar.gz debian
+cd $CURRENT_DIRECTORY/home:VIFIBnexedi/SlapOS-Node
+cp $TEMPLATES_DIRECTORY/debian.tar.gz .
+#prepare new .dsc file
+osc rm slapos*.dsc
+sed "s/\%RECIPE_VERSION\%/$RECIPE_VERSION/g;s/\%VERSION\%/$VERSION/g" $TEMPLATES_DIRECTORY/slapos.dsc.in > $SLAPOS_DIRECTORY.dsc
+osc add $SLAPOS_DIRECTORY.dsc 
+
+## Upload new Package
 osc commit -m " New SlapOS Recipe $RECIPE_VERSION"
 
 # Save current version
