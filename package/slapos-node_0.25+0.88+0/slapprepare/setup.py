@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 import glob
 import os
 
-version = '0.24'
+version = '0.23'
 name = 'slapprepare'
 
 
