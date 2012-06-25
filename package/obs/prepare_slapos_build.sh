@@ -32,7 +32,7 @@ if [ $RECIPE_VERSION != $CURRENT_RECIPE_VERSION ]
 then
 mv $SLAPOS_FORMER_DIRECTORY $SLAPOS_DIRECTORY
 fi
-rm $SLAPOS_FORMER_DIRECTORY.tar.gz
+rm -f $SLAPOS_FORMER_DIRECTORY.tar.gz
 tar -czf $SLAPOS_DIRECTORY.tar.gz $SLAPOS_DIRECTORY
 
 
@@ -63,7 +63,7 @@ tar -czf debian.tar.gz debian
 cd $CURRENT_DIRECTORY/home:VIFIBnexedi/SlapOS-Node
 cp $TEMPLATES_DIRECTORY/debian.tar.gz .
 #prepare new .dsc file
-osc rm slapos*.dsc
+osc rm -f slapos*.dsc
 sed "s/\%RECIPE_VERSION\%/$RECIPE_VERSION/g;s/\%VERSION\%/$VERSION/g" $TEMPLATES_DIRECTORY/slapos.dsc.in > $SLAPOS_DIRECTORY.dsc
 osc add $SLAPOS_DIRECTORY.dsc 
 
