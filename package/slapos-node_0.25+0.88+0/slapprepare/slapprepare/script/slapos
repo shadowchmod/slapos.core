@@ -157,3 +157,6 @@ echo noop > /sys/block/$disk/queue/scheduler
 # Set kvm up
 modprobe kvm_intel
 chmod 666 /dev/kvm
+
+# Set up cpufreq
+modprobe acpi-cpufreq
