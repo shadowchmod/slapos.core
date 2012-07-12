@@ -158,5 +158,9 @@ echo noop > /sys/block/$disk/queue/scheduler
 modprobe kvm_intel
 chmod 666 /dev/kvm
 
-# Set up cpufreq
-modprobe acpi-cpufreq
+# Set power saving
+modprobe acpi_cpufreq
+
+# Set hardware monitoring tools (for Shuttle xh61 machines)
+modprobe coretemp
+modprobe f71882fg
