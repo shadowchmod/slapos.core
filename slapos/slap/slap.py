@@ -32,6 +32,7 @@ __all__ = ["slap", "ComputerPartition", "Computer", "SoftwareRelease",
 from interface import slap as interface
 from xml_marshaller import xml_marshaller
 import httplib
+import os
 import socket
 import ssl
 import urllib
@@ -557,7 +558,13 @@ class ConnectionHelper:
     return xml_marshaller.loads(self.response.read())
 
   def getFullComputerInformation(self, computer_id):
+    if os.path.exists("/opt/slapos/cache"):
+      return xml_marshaller.loads(open("/opt/slapos/cache", "r").read())
     self.GET('/getFullComputerInformation?computer_id=%s' % computer_id)
+    if not os.path.exists("/opt/slapos/cache"):
+      cache = self.response.read()
+      open("/opt/slapos/cache", "w+").write(cache)
+      return xml_marshaller.loads(cache)
     return xml_marshaller.loads(self.response.read())
 
   def connect(self):
@@ -678,10 +685,18 @@ class slap:
     Registers connected representation of computer partition and
     returns Computer Partition class object
     """
-    self._connection_helper.GET('/registerComputerPartition?' \
-        'computer_reference=%s&computer_partition_reference=%s' % (
-          computer_guid, partition_id))
-    result = xml_marshaller.loads(self._connection_helper.response.read())
+    cache_id = "/tmp/cache_registerComputerPartition%s%s" % (computer_guid, partition_id)
+    if os.path.exists(cache_id):
+      cache = open(cache_id, "r").read()
+    else:
+      self._connection_helper.GET('/registerComputerPartition?' \
+          'computer_reference=%s&computer_partition_reference=%s' % (
+            computer_guid, partition_id))
+      if not os.path.exists(cache_id):
+        cache = self._connection_helper.response.read()
+        open(cache_id, "w+").write(cache)
+        
+    result = xml_marshaller.loads(cache)
     # XXX: dirty hack to make computer partition usable. xml_marshaller is too
     # low-level for our needs here.
     result._connection_helper = self._connection_helper
