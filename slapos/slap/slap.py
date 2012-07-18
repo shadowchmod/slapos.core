@@ -692,3 +692,34 @@ class slap:
 
   def registerSupply(self):
     return Supply(connection_helper=self._connection_helper)
+
+# Profiling Patch
+import logging
+import time
+hr = logging.FileHandler('/tmp/profilingX.log')
+l = logging.getLogger("Profiling")
+l.addHandler(hr)
+
+def profiled_POST(self, path, parameter_dict,
+      content_type="application/x-www-form-urlencoded"):
+  start = time.time()
+  r = self.original_POST(path, parameter_dict, content_type)
+  l.info(" TIME: %s REQUEST: %s %s %s" % (time.time() - start, path,
+parameter_dict, content_type))
+  return r
+
+original_POST = ConnectionHelper.POST
+ConnectionHelper.POST = profiled_POST
+ConnectionHelper.original_POST = original_POST
+
+def profiled_GET(self, path):
+  start = time.time()
+  r = self.original_GET(path)
+  l.info(" TIME: %s REQUEST: %s " % (time.time() - start, path))
+  return r
+
+original_GET = ConnectionHelper.GET
+ConnectionHelper.GET = profiled_GET
+ConnectionHelper.original_GET = original_GET
+# End of profiling patch
+
