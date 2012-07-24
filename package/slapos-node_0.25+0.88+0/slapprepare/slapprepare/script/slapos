@@ -164,3 +164,6 @@ modprobe acpi_cpufreq
 # Set hardware monitoring tools (for Shuttle xh61 machines)
 modprobe coretemp
 modprobe f71882fg
+
+# Activate KSM (shared memory for KVM)
+echo 1 > /sys/kernel/mm/ksm/run
