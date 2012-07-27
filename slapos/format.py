@@ -874,6 +874,8 @@ class Parser(OptionParser):
              help="Launch slapformat without delay",
              default=False,
              action="store_true"),
+      Option('--hardcoded_partition_list',
+             help="List of hardcoded partitions"),
       ])
 
   def check_args(self, args):
@@ -957,17 +959,26 @@ def run(config):
         software_user=config.software_user,
       )
 
+    # XXX HARDCODED
+    hardcoded_partition_list = []
+    for partition in config.hardcoded_partition_list.split(','):
+      hardcoded_partition_list.append(int(partition))
+
     partition_amount = int(config.partition_amount)
     existing_partition_amount = len(computer.partition_list)
-    if existing_partition_amount > partition_amount:
+    if existing_partition_amount > partition_amount + len(hardcoded_partition_list):
       raise ValueError('Requested amount of computer partitions (%s) is lower '
           'then already configured (%s), cannot continue' % (partition_amount,
             len(computer.partition_list)))
 
     config.logger.info('Adding %s new partitions' %
         (partition_amount-existing_partition_amount))
-    for nb_iter in range(existing_partition_amount, partition_amount):
-      # add new ones
+    hardcoded_partition_range = range(existing_partition_amount, partition_amount)
+    if not os.path.exists(config.computer_xml):
+      hardcoded_partition_range.extend(hardcoded_partition_list)
+    elif existing_partition_amount + 1 == partition_amount:
+      partition_amount = partition_amount +1
+    for nb_iter in hardcoded_partition_range:      # add new ones
       user = User("%s%s" % (config.user_base_name, nb_iter))
 
       tap = Tap("%s%s" % (config.tap_base_name, nb_iter))
