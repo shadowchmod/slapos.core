@@ -156,6 +156,7 @@ echo noop > /sys/block/$disk/queue/scheduler
 
 # Set kvm up
 modprobe kvm_intel
+sleep 1
 chmod 666 /dev/kvm
 
 # Set power saving
