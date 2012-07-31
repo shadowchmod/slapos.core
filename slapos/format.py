@@ -961,8 +961,9 @@ def run(config):
 
     # XXX HARDCODED
     hardcoded_partition_list = []
-    for partition in config.hardcoded_partition_list.split(','):
-      hardcoded_partition_list.append(int(partition))
+    if config.hardcoded_partition_list:
+      for partition in config.hardcoded_partition_list.split(','):
+        hardcoded_partition_list.append(int(partition))
 
     partition_amount = int(config.partition_amount)
     existing_partition_amount = len(computer.partition_list)
