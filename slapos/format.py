@@ -967,10 +967,10 @@ def run(config):
 
     partition_amount = int(config.partition_amount)
     existing_partition_amount = len(computer.partition_list)
-    if existing_partition_amount > partition_amount + len(hardcoded_partition_list):
-      raise ValueError('Requested amount of computer partitions (%s) is lower '
-          'then already configured (%s), cannot continue' % (partition_amount,
-            len(computer.partition_list)))
+    #if existing_partition_amount > partition_amount:
+    #  raise ValueError('Requested amount of computer partitions (%s) is lower '
+    #      'then already configured (%s), cannot continue' % (partition_amount,
+    #        len(computer.partition_list)))
 
     config.logger.info('Adding %s new partitions' %
         (partition_amount-existing_partition_amount))
