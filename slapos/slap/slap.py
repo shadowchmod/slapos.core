@@ -545,7 +545,7 @@ class ConnectionHelper:
   ssl_error_message_connect_fail = "\nCouldn't authenticate computer. Please "\
       "check that certificate and key exist and are valid. "
   def __init__(self, connection_wrapper, host, path, key_file=None,
-      cert_file=None, master_ca_file=None, timeout=None):
+      cert_file=None, master_ca_file=None, timeout=None, cache_location=None):
     self.connection_wrapper = connection_wrapper
     self.host = host
     self.path = path
@@ -553,18 +553,24 @@ class ConnectionHelper:
     self.cert_file = cert_file
     self.master_ca_file = master_ca_file
     self.timeout = timeout
+    self.cache_location = cache_location
 
   def getComputerInformation(self, computer_id):
     self.GET('/getComputerInformation?computer_id=%s' % computer_id)
     return xml_marshaller.loads(self.response.read())
 
   def getFullComputerInformation(self, computer_id):
-    if os.path.exists("/opt/slapos/cache"):
-      return xml_marshaller.loads(open("/opt/slapos/cache", "r").read())
+    # Check if cache (file) is enabled and exists: return directly from cache
+    if self.cache_location:
+      computer_cache_location = os.path.join(cache_location, 'computer.xml')
+    if self.cache_location and os.path.exists(computer_cache_location):
+      return xml_marshaller.loads(open(computer_cache_location, "r").read())
+    # Fetch up-to-date information if no valid cache or cache is not enabled
     self.GET('/getFullComputerInformation?computer_id=%s' % computer_id)
-    if not os.path.exists("/opt/slapos/cache"):
+    # If cache enabled: set it
+    if self.cache_location and not os.path.exists(computer_cache_location):
       cache = self.response.read()
-      open("/opt/slapos/cache", "w+").write(cache)
+      open(computer_cache_location, "w+").write(cache)
       return xml_marshaller.loads(cache)
     return xml_marshaller.loads(self.response.read())
 
@@ -645,6 +651,8 @@ class ConnectionHelper:
 class slap:
 
   zope.interface.implements(interface.slap)
+  def __init__(self, cache_location=None):
+    self.cache_location = cache_location
 
   def initializeConnection(self, slapgrid_uri, key_file=None, cert_file=None,
       master_ca_file=None, timeout=60):
@@ -665,7 +673,8 @@ class slap:
       raise AttributeError('Passed URL %r issue: there is no support for %r p'
           'rotocol' % (slapgrid_uri, scheme))
     self._connection_helper = ConnectionHelper(connection_wrapper,
-          netloc, path, key_file, cert_file, master_ca_file, timeout)
+          netloc, path, key_file, cert_file, master_ca_file, timeout,
+          cache_location)
 
   def registerSoftwareRelease(self, software_release):
     """
@@ -688,16 +697,18 @@ class slap:
     Registers connected representation of computer partition and
     returns Computer Partition class object
     """
-    cache_id = "/tmp/cache_registerComputerPartition%s%s" % (computer_guid, partition_id)
-    if os.path.exists(cache_id):
-      cache = open(cache_id, "r").read()
+    if self.cache_location:
+      partition_cache_location = os.path.join(cache_location,
+          'partition%s%s.xml' % (computer_guid, partition_id))
+    if self.cache_location and os.path.exists(partition_cache_location):
+      cache = open(partition_cache_location, "r").read()
     else:
       self._connection_helper.GET('/registerComputerPartition?' \
           'computer_reference=%s&computer_partition_reference=%s' % (
             computer_guid, partition_id))
-      if not os.path.exists(cache_id):
+      if self.cache_location and not os.path.exists(partition_cache_location):
         cache = self._connection_helper.response.read()
-        open(cache_id, "w+").write(cache)
+        open(partition_cache_location, "w+").write(cache)
         
     result = xml_marshaller.loads(cache)
     # XXX: dirty hack to make computer partition usable. xml_marshaller is too
