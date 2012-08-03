@@ -562,7 +562,8 @@ class ConnectionHelper:
   def getFullComputerInformation(self, computer_id):
     # Check if cache (file) is enabled and exists: return directly from cache
     if self.cache_location:
-      computer_cache_location = os.path.join(cache_location, 'computer.xml')
+      computer_cache_location = os.path.join(self.cache_location,
+          'computer.xml')
     if self.cache_location and os.path.exists(computer_cache_location):
       return xml_marshaller.loads(open(computer_cache_location, "r").read())
     # Fetch up-to-date information if no valid cache or cache is not enabled
@@ -570,7 +571,7 @@ class ConnectionHelper:
     # If cache enabled: set it
     if self.cache_location and not os.path.exists(computer_cache_location):
       cache = self.response.read()
-      open(computer_cache_location, "w+").write(cache)
+      open(computer_cache_location, "w").write(cache)
       return xml_marshaller.loads(cache)
     return xml_marshaller.loads(self.response.read())
 
@@ -674,7 +675,7 @@ class slap:
           'rotocol' % (slapgrid_uri, scheme))
     self._connection_helper = ConnectionHelper(connection_wrapper,
           netloc, path, key_file, cert_file, master_ca_file, timeout,
-          cache_location)
+          self.cache_location)
 
   def registerSoftwareRelease(self, software_release):
     """
@@ -697,24 +698,28 @@ class slap:
     Registers connected representation of computer partition and
     returns Computer Partition class object
     """
+    # If local cache directory location is defined: we'll use a file inside it
     if self.cache_location:
-      partition_cache_location = os.path.join(cache_location,
+      partition_cache_location = os.path.join(self.cache_location,
           'partition%s%s.xml' % (computer_guid, partition_id))
+    # If cache for this partition exists: use it
     if self.cache_location and os.path.exists(partition_cache_location):
-      cache = open(partition_cache_location, "r").read()
+      xml_result = open(partition_cache_location, "r").read()
+    # Otherwise: go to server
     else:
       self._connection_helper.GET('/registerComputerPartition?' \
           'computer_reference=%s&computer_partition_reference=%s' % (
             computer_guid, partition_id))
+      xml_result = self._connection_helper.response.read()
+      # If cache is defined, let's write it.
       if self.cache_location and not os.path.exists(partition_cache_location):
-        cache = self._connection_helper.response.read()
-        open(partition_cache_location, "w+").write(cache)
-        
-    result = xml_marshaller.loads(cache)
+        open(partition_cache_location, "w").write(xml_result)
+    result = xml_marshaller.loads(xml_result)
     # XXX: dirty hack to make computer partition usable. xml_marshaller is too
     # low-level for our needs here.
     result._connection_helper = self._connection_helper
     return result
+
 
   def registerOpenOrder(self):
     return OpenOrder(connection_helper=self._connection_helper)

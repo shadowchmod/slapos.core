@@ -38,6 +38,7 @@ from random import random
 import socket
 import subprocess
 import StringIO
+import shutil
 import sys
 import tempfile
 import time
@@ -124,7 +125,6 @@ def parseArgumentTupleAndReturnSlapgridObject(*argument_tuple):
       help="Update a single or a list of computer partitions "
            "(ie.:slappartX, slappartY),"
            "this option will make all others computer partitions be ignored.")
-
 
   # Parses arguments
   if argument_tuple == ():
@@ -225,10 +225,23 @@ def parseArgumentTupleAndReturnSlapgridObject(*argument_tuple):
   else:
     signature_certificate_list = None
 
-  # Parse cache / binary options
+  # Parse shacache / binary cache options
   option_dict["binary-cache-url-blacklist"] = [
       url.strip() for url in option_dict.get("binary-cache-url-blacklist", ""
           ).split('\n') if url]
+
+  # Set local cache option, use default one if not defined
+  # XXX-Cedric: put one cache per cp/sr/ur
+  # XXX-Cedric: clean after run
+  local_cache = option_dict.get('local-cache',
+      # We put by default on instance_root, because we know this path
+      os.path.join(option_dict['instance_root'], 'cache'))
+      # XXX-Cedric should be shutil.mkdtemp())
+  # Clean old rubbish cache
+  if os.path.exists(local_cache):
+    shutil.rmtree(local_cache)
+  # Create new one
+  os.mkdir(local_cache)
 
   # Sleep for a random time to avoid SlapOS Master being DDOSed by an army of
   # SlapOS Nodes configured with cron.
@@ -278,6 +291,7 @@ def parseArgumentTupleAndReturnSlapgridObject(*argument_tuple):
             develop=option_dict.get('develop', False),
             software_release_filter_list=option_dict.get('only_sr', None),
             computer_partition_filter_list=option_dict.get('only_cp', None),
+            local_cache=local_cache,
             ),
           option_dict])
 
@@ -367,7 +381,8 @@ class Slapgrid(object):
                shadir_key_file=None,
                develop=False,
                software_release_filter_list=None,
-               computer_partition_filter_list=None):
+               computer_partition_filter_list=None,
+               local_cache=None):
     """Makes easy initialisation of class parameters"""
     # Parses arguments
     self.software_root = os.path.abspath(software_root)
@@ -396,7 +411,7 @@ class Slapgrid(object):
     # Configures logger
     self.logger = logging.getLogger('Slapgrid')
     # Creates objects from slap module
-    self.slap = slap.slap()
+    self.slap = slap.slap(local_cache) # XXX-Cedric give it as well to childs
     self.slap.initializeConnection(self.master_url, key_file=self.key_file,
         cert_file=self.cert_file, master_ca_file=self.master_ca_file)
     self.computer = self.slap.registerComputer(self.computer_id)
@@ -898,10 +913,8 @@ class Slapgrid(object):
             # Warn the SlapOS Master that a partition generates corrupted xml
             # report
           else:
-            computer_partition_usage = self.slap.registerComputerPartition(
-                    self.computer_id, computer_partition_id)
-            computer_partition_usage.setUsage(usage)
-            computer_partition_usage_list.append(computer_partition_usage)
+            computer_partition.setUsage(usage)
+            computer_partition_usage_list.append(computer_partition)
             filename_delete_list.append(filename)
         else:
           logger.debug("Usage report %r not found, ignored" % file_path)
