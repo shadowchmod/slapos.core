@@ -572,6 +572,7 @@ class ConnectionHelper:
     if self.cache_location and not os.path.exists(computer_cache_location):
       cache = self.response.read()
       open(computer_cache_location, "w").write(cache)
+      os.chmod(computer_cache_location, 0777)
       return xml_marshaller.loads(cache)
     return xml_marshaller.loads(self.response.read())
 
@@ -654,6 +655,8 @@ class slap:
   zope.interface.implements(interface.slap)
   def __init__(self, cache_location=None):
     self.cache_location = cache_location
+    if cache_location is None:
+      self.cache_location = '/opt/slapos/cache'
 
   def initializeConnection(self, slapgrid_uri, key_file=None, cert_file=None,
       master_ca_file=None, timeout=60):
@@ -700,21 +703,23 @@ class slap:
     """
     # If local cache directory location is defined: we'll use a file inside it
     if self.cache_location:
-      partition_cache_location = os.path.join(self.cache_location,
-          'partition%s%s.xml' % (computer_guid, partition_id))
+      computer_cache_location = os.path.join(self.cache_location,
+          'computer.xml')
     # If cache for this partition exists: use it
-    if self.cache_location and os.path.exists(partition_cache_location):
-      xml_result = open(partition_cache_location, "r").read()
+    if self.cache_location and os.path.exists(computer_cache_location):
+      xml_result = open(computer_cache_location, "r").read()
+      computer = xml_marshaller.loads(xml_result)
+      computer._connection_helper = self._connection_helper
+      for instance in computer.getComputerPartitionList():
+        if instance.getId() == partition_id:
+          result = instance
     # Otherwise: go to server
     else:
       self._connection_helper.GET('/registerComputerPartition?' \
           'computer_reference=%s&computer_partition_reference=%s' % (
             computer_guid, partition_id))
       xml_result = self._connection_helper.response.read()
-      # If cache is defined, let's write it.
-      if self.cache_location and not os.path.exists(partition_cache_location):
-        open(partition_cache_location, "w").write(xml_result)
-    result = xml_marshaller.loads(xml_result)
+      result = xml_marshaller.loads(xml_result)
     # XXX: dirty hack to make computer partition usable. xml_marshaller is too
     # low-level for our needs here.
     result._connection_helper = self._connection_helper

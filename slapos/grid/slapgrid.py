@@ -231,12 +231,7 @@ def parseArgumentTupleAndReturnSlapgridObject(*argument_tuple):
           ).split('\n') if url]
 
   # Set local cache option, use default one if not defined
-  # XXX-Cedric: put one cache per cp/sr/ur
-  # XXX-Cedric: clean after run
-  local_cache = option_dict.get('local-cache',
-      # We put by default on instance_root, because we know this path
-      os.path.join(option_dict['instance_root'], 'cache'))
-      # XXX-Cedric should be shutil.mkdtemp())
+  local_cache = option_dict.get('local-cache','/opt/slapos/cache')
   # Clean old rubbish cache
   if os.path.exists(local_cache):
     shutil.rmtree(local_cache)
