@@ -140,7 +140,7 @@ def slapconfig(config):
         os.chmod(dst, 0600)
         os.chown(dst, 0, 0)
 
-    certificate_repository_path = os.path.join('/'.join([slap_configuration_directory,'ssl']))
+    certificate_repository_path = os.path.join('/'.join([slap_configuration_directory,'ssl','partition_pki']))
     if not os.path.exists(certificate_repository_path):
       print "Creating directory: %s" % certificate_repository_path
       if not dry_run:
