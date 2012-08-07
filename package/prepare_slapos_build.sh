@@ -8,7 +8,7 @@ CURRENT_VERSION=$(cat ./slapos-version)
 
 CURRENT_DIRECTORY="$(pwd)"
 TEMPLATES_DIRECTORY=$CURRENT_DIRECTORY/templates
-SLAPOS_FORMER_DIRECTORY=slapos-node_$CURRENT_VERSION+$CURRENT_RECIPE_VERSION+0
+SLAPOS_FORMER_DIRECTORY=slapos-node
 SLAPOS_DIRECTORY=slapos-node_$VERSION+$RECIPE_VERSION+0
 
 
@@ -73,3 +73,9 @@ osc commit -m " New SlapOS Recipe $RECIPE_VERSION"
 # Save current version
 echo "$RECIPE_VERSION" > $CURRENT_DIRECTORY/slapos-recipe-version  
 echo "$VERSION" > $CURRENT_DIRECTORY/slapos-version  
+
+# Rename directory as slapos-node
+if [ $RECIPE_VERSION != $CURRENT_RECIPE_VERSION ]
+then
+mv $SLAPOS_DIRECTORY $SLAPOS_FORMER_DIRECTORY 
+fi
