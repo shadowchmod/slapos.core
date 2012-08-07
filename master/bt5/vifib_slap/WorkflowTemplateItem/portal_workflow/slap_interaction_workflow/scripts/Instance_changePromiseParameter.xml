@@ -51,30 +51,7 @@
         <item>
             <key> <string>_body</string> </key>
             <value> <string>instance = state_change[\'object\']\n
-\n
-# Get latest workflow transition\n
-state = instance.getSlapState()\n
-started = "start_requested"\n
-stopped = "stop_requested"\n
-\n
-if (state in (started, stopped)):\n
-  partition = instance.getAggregate(portal_type="Computer Partition")\n
-  if (partition is not None):\n
-    portal = instance.getPortalObject()\n
-    delivery = instance.getCausalityValue(portal_type=["Sale Packing List"])\n
-    update_service_relative_url = portal.portal_preferences.getPreferredInstanceUpdateResource()\n
-\n
-    if delivery is None:\n
-      new_delivery = context.Instance_createSalePackingList(state_change, portal.restrictedTraverse(update_service_relative_url))\n
-    else:\n
-      new_delivery = delivery.Base_createCloneDocument(batch_mode=1)\n
-    new_delivery.edit(start_date=DateTime(), stop_date=DateTime(), causality_value=None)\n
-    new_delivery.contentValues(portal_type="Sale Packing List Line")[0].edit(resource=update_service_relative_url)\n
-    new_delivery.confirm()\n
-    new_delivery.start()\n
-    new_delivery.stop()\n
-    new_delivery.deliver()\n
-    new_delivery.startBuilding()\n
+instance.bang(bang_tree=False, comment="Parameter changed")\n
 </string> </value>
         </item>
         <item>
