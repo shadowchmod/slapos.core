@@ -1,3 +1,4 @@
+from Products.ZSQLCatalog.SQLCatalog import Query, ComplexQuery
 from Products.ERP5Type.tests.Sequence import SequenceList
 from Products.ERP5Type.tests.backportUnittest import skip
 import transaction
@@ -17,7 +18,7 @@ class TestVifibSlapComputerGetComputerPartitionList(TestVifibSlapWebServiceMixin
     sequence_list = SequenceList()
     sequence_string = self.prepare_computer + '\
       SlapLoginCurrentComputer \
-      CheckEmptyComputerGetComputerPartitionCall \
+      CheckSuccessComputerGetComputerPartitionCall \
       SlapLogout \
       LoginERP5TypeTestCase \
       CheckSiteConsistency \
@@ -34,7 +35,7 @@ class TestVifibSlapComputerGetComputerPartitionList(TestVifibSlapWebServiceMixin
     sequence_list = SequenceList()
     sequence_string = self.prepare_formated_computer + '\
       SlapLoginCurrentComputer \
-      CheckEmptyComputerGetComputerPartitionCall \
+      CheckSuccessComputerGetComputerPartitionCall \
       SlapLogout \
       LoginERP5TypeTestCase \
       CheckSiteConsistency \
@@ -99,7 +100,7 @@ class TestVifibSlapComputerGetComputerPartitionList(TestVifibSlapWebServiceMixin
       Logout \
       ' + self.prepare_computer + '\
       SlapLoginCurrentComputer \
-      CheckEmptyComputerGetComputerPartitionCall \
+      CheckSuccessComputerGetComputerPartitionCall \
       SlapLogout \
       LoginERP5TypeTestCase \
       CheckSiteConsistency \
@@ -148,14 +149,10 @@ class TestVifibSlapComputerGetComputerPartitionList(TestVifibSlapWebServiceMixin
       SelectCurrentlyUsedSalePackingListUid \
       CancelSalePackingList \
       Tic \
-      CheckComputerPartitionInstanceSetupSalePackingListCancelled \
-      SelectCurrentlyUsedSalePackingListUid \
-      CancelSalePackingList \
-      Tic \
-      CheckComputerPartitionInstanceCleanupSalePackingListCancelled \
+      CheckComputerPartitionInstanceHostingSalePackingListCancelled \
       Logout \
       SlapLoginCurrentComputer \
-      CheckEmptyComputerGetComputerPartitionCall \
+      CheckSuccessComputerGetComputerPartitionCall \
       SlapLogout \
       LoginERP5TypeTestCase \
       CheckSiteConsistency \
@@ -208,7 +205,7 @@ class TestVifibSlapComputerGetComputerPartitionList(TestVifibSlapWebServiceMixin
     sequence_string = self.prepare_installed_computer_partition_sequence_string + '\
       LoginDefaultUser \
       Tic \
-      CheckComputerPartitionInstanceSetupSalePackingListStopped \
+      CheckComputerPartitionInstanceSetupSalePackingListDelivered \
       SelectCurrentlyUsedSalePackingListUid \
       CancelSalePackingList \
       Tic \
@@ -216,7 +213,7 @@ class TestVifibSlapComputerGetComputerPartitionList(TestVifibSlapWebServiceMixin
       CheckComputerPartitionInstanceCleanupSalePackingListDoesNotExists \
       Logout \
       SlapLoginCurrentComputer \
-      CheckEmptyComputerGetComputerPartitionCall \
+      CheckSuccessComputerGetComputerPartitionCall \
       SlapLogout \
       LoginERP5TypeTestCase \
       CheckSiteConsistency \
@@ -225,6 +222,19 @@ class TestVifibSlapComputerGetComputerPartitionList(TestVifibSlapWebServiceMixin
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
+  def stepDeliverInstanceSetupSalePackingList(self, sequence, **kw):
+    delivery = self.portal.portal_catalog.getResultValue(
+      default_aggregate_uid=ComplexQuery(
+         Query(default_aggregate_uid=sequence['computer_partition_uid']),
+         Query(default_aggregate_uid=sequence['software_instance_uid']),
+         operator="AND"),
+      portal_type=self.sale_packing_list_line_portal_type,
+      simulation_state='stopped',
+      resource_relative_url=self.portal.portal_preferences\
+        .getPreferredInstanceSetupResource()
+    ).getParentValue()
+    self.portal.portal_workflow.doActionFor(delivery, 'deliver_action')
+
   def test_Computer_getComputerPartitionList_SetupResource_DeliveredState(self):
     """
     Check that calling Computer.getComputerPartitionList works in
@@ -232,9 +242,10 @@ class TestVifibSlapComputerGetComputerPartitionList(TestVifibSlapWebServiceMixin
     """
     sequence_list = SequenceList()
     sequence_string = self.prepare_installed_computer_partition_sequence_string + '\
+      CallVifibUpdateDeliveryCausalityStateAlarm \
+      CleanTic \
+      \
       LoginDefaultUser \
-      DeliverSalePackingList \
-      Tic \
       CheckComputerPartitionInstanceSetupSalePackingListDelivered \
       SelectCurrentlyUsedSalePackingListUid \
       CancelSalePackingList \
@@ -244,7 +255,7 @@ class TestVifibSlapComputerGetComputerPartitionList(TestVifibSlapWebServiceMixin
       Logout \
       \
       SlapLoginCurrentComputer \
-      CheckEmptyComputerGetComputerPartitionCall \
+      CheckSuccessComputerGetComputerPartitionCall \
       SlapLogout \
       LoginERP5TypeTestCase \
       CheckSiteConsistency \
@@ -267,7 +278,7 @@ class TestVifibSlapComputerGetComputerPartitionList(TestVifibSlapWebServiceMixin
       Logout \
       \
       SlapLoginCurrentComputer \
-      CheckEmptyComputerGetComputerPartitionCall \
+      CheckSuccessComputerGetComputerPartitionCall \
       SlapLogout \
       LoginERP5TypeTestCase \
       CheckSiteConsistency \
@@ -301,7 +312,7 @@ class TestVifibSlapComputerGetComputerPartitionList(TestVifibSlapWebServiceMixin
     sequence_list = SequenceList()
     sequence_string = self.prepare_started_computer_partition_sequence_string + '\
       SlapLoginCurrentComputer \
-      CheckEmptyComputerGetComputerPartitionCall \
+      CheckSuccessComputerGetComputerPartitionCall \
       SlapLogout \
       LoginERP5TypeTestCase \
       CheckSiteConsistency \
@@ -320,10 +331,11 @@ class TestVifibSlapComputerGetComputerPartitionList(TestVifibSlapWebServiceMixin
     sequence_list = SequenceList()
     sequence_string = self.prepare_started_computer_partition_sequence_string + '\
       SlapLoginCurrentComputer \
-      CheckEmptyComputerGetComputerPartitionCall \
+      CheckSuccessComputerGetComputerPartitionCall \
       SlapLogout \
       \
       LoginTestVifibCustomer \
+      SetSoftwareTitleRandom \
       PersonRequestSlaveInstance \
       Tic \
       SlapLogout \
@@ -331,7 +343,7 @@ class TestVifibSlapComputerGetComputerPartitionList(TestVifibSlapWebServiceMixin
       LoginDefaultUser \
       CallConfirmOrderedSaleOrderAlarm \
       Tic \
-      CheckComputerPartitionInstanceSetupSalePackingListConfirmed \
+      CheckComputerPartitionInstanceSetupSalePackingListDelivered \
       Logout \
       \
       SlapLoginCurrentComputer \
@@ -345,14 +357,15 @@ class TestVifibSlapComputerGetComputerPartitionList(TestVifibSlapWebServiceMixin
       \
       LoginDefaultUser \
       SetDeliveryLineAmountEqualOne \
-      CheckComputerPartitionInstanceHostingSalePackingListStarted \
+      CheckComputerPartitionInstanceHostingSalePackingListConfirmed \
       Logout \
       \
       SlapLoginCurrentComputer \
-      CheckEmptyComputerGetComputerPartitionCall \
+      CheckSuccessComputerGetComputerPartitionCall \
       SlapLogout \
       \
       LoginTestVifibCustomer \
+      SetSoftwareTitleRandom \
       PersonRequestSlaveInstance \
       Tic \
       SlapLogout \
@@ -361,7 +374,7 @@ class TestVifibSlapComputerGetComputerPartitionList(TestVifibSlapWebServiceMixin
       CallConfirmOrderedSaleOrderAlarm \
       Tic \
       SetDeliveryLineAmountEqualOne \
-      CheckComputerPartitionInstanceSetupSalePackingListConfirmed \
+      CheckComputerPartitionInstanceSetupSalePackingListDelivered \
       Logout \
       \
       SlapLoginCurrentComputer \
@@ -374,11 +387,11 @@ class TestVifibSlapComputerGetComputerPartitionList(TestVifibSlapWebServiceMixin
       \
       LoginDefaultUser \
       SetDeliveryLineAmountEqualOne \
-      CheckComputerPartitionInstanceHostingSalePackingListStarted \
+      CheckComputerPartitionInstanceHostingSalePackingListConfirmed \
       Logout \
       \
       SlapLoginCurrentComputer \
-      CheckEmptyComputerGetComputerPartitionCall \
+      CheckSuccessComputerGetComputerPartitionCall \
       SlapLogout \
       \
       LoginTestVifibCustomer \
@@ -394,10 +407,10 @@ class TestVifibSlapComputerGetComputerPartitionList(TestVifibSlapWebServiceMixin
       \
       LoginDefaultUser \
       SetDeliveryLineAmountEqualOne \
-      CheckComputerPartitionInstanceHostingSalePackingListDelivered \
+      CheckComputerPartitionInstanceHostingSalePackingListStopped \
       Logout \
       SlapLoginCurrentComputer \
-      CheckEmptyComputerGetComputerPartitionCall \
+      CheckSuccessComputerGetComputerPartitionCall \
       SlapLogout \
       LoginERP5TypeTestCase \
       CheckSiteConsistency \
@@ -417,7 +430,8 @@ class TestVifibSlapComputerGetComputerPartitionList(TestVifibSlapWebServiceMixin
       CheckSuccessComputerGetComputerPartitionCall \
       SlapLogout \
       LoginTestVifibCustomer \
-      RequestSoftwareInstanceDestroy \
+      SetSequenceSoftwareInstanceStateDestroyed \
+      PersonRequestSoftwareInstance \
       Tic \
       Logout \
       SlapLoginCurrentComputer \
@@ -445,7 +459,7 @@ class TestVifibSlapComputerGetComputerPartitionList(TestVifibSlapWebServiceMixin
     sequence_list = SequenceList()
     sequence_string = self.prepare_stopped_computer_partition_sequence_string + '\
       SlapLoginCurrentComputer \
-      CheckEmptyComputerGetComputerPartitionCall \
+      CheckSuccessComputerGetComputerPartitionCall \
       SlapLogout \
       LoginERP5TypeTestCase \
       CheckSiteConsistency \
@@ -468,7 +482,7 @@ class TestVifibSlapComputerGetComputerPartitionList(TestVifibSlapWebServiceMixin
       Logout \
       \
       SlapLoginCurrentComputer \
-      CheckStartedComputerPartitionGetStateCall \
+      CheckDestroyedComputerPartitionGetStateCall \
       SlapLogout \
       LoginERP5TypeTestCase \
       CheckSiteConsistency \
@@ -550,7 +564,7 @@ class TestVifibSlapComputerGetComputerPartitionList(TestVifibSlapWebServiceMixin
     sequence_list = SequenceList()
     sequence_string = self.prepare_destroyed_computer_partition + '\
       SlapLoginCurrentComputer \
-      CheckEmptyComputerGetComputerPartitionCall \
+      CheckSuccessComputerGetComputerPartitionCall \
       SlapLogout \
       LoginERP5TypeTestCase \
       CheckSiteConsistency \
@@ -676,7 +690,7 @@ class TestVifibSlapComputerGetComputerPartitionList(TestVifibSlapWebServiceMixin
       Tic \
       Logout \
       SlapLoginCurrentComputer \
-      CheckStoppedComputerPartitionGetStateCall \
+      CheckStartedComputerPartitionGetStateCall \
       SlapLogout \
       LoginERP5TypeTestCase \
       CheckSiteConsistency \
@@ -691,22 +705,44 @@ class TestVifibSlapComputerGetComputerPartitionList(TestVifibSlapWebServiceMixin
     software_instance.edit(connection_xml="")
 
   def stepDamageSoftwareInstanceSlaXml(self, sequence, **kw):
-    software_instance = self.portal.portal_catalog.getResultValue(
+    instance = self.portal.portal_catalog.getResultValue(
         uid=sequence['software_instance_uid'])
-    software_instance.edit(sla_xml="""
-    DAMAGED<BAD?xml XMLversion="1.0" encoding="utf-8"?>""")
+    if instance.getPortalType() == "Software Instance":
+      shared = False
+    elif instance.getPortalType() == "Slave Instance":
+      shared = True
+    else:
+      raise NotImplementedError
+    self.assertRaises(ValidationFailed, instance.requestStart,
+        software_release=instance.getRootSoftwareReleaseUrl(),
+        instance_xml=instance.getTextContent(),
+        software_type=instance.getSourceReference(),
+        sla_xml="""DAMAGED<BAD?xml XMLversion="1.0" encoding="utf-8"?>""",
+        shared=shared,
+        )
 
   def stepDamageSoftwareInstanceConnectionXml(self, sequence, **kw):
-    software_instance = self.portal.portal_catalog.getResultValue(
+    instance = self.portal.portal_catalog.getResultValue(
         uid=sequence['software_instance_uid'])
-    software_instance.edit(connection_xml="""
+    instance.edit(connection_xml="""
     DAMAGED<BAD?xml XMLversion="1.0" encoding="utf-8"?>""")
 
   def stepDamageSoftwareInstanceXml(self, sequence, **kw):
-    software_instance = self.portal.portal_catalog.getResultValue(
+    instance = self.portal.portal_catalog.getResultValue(
         uid=sequence['software_instance_uid'])
-    self.assertRaises(ValidationFailed, software_instance.edit,
-      text_content="""DAMAGED<BAD?xml XMLversion="1.0" encoding="utf-8"?>""")
+    if instance.getPortalType() == "Software Instance":
+      shared = False
+    elif instance.getPortalType() == "Slave Instance":
+      shared = True
+    else:
+      raise NotImplementedError
+    self.assertRaises(ValidationFailed, instance.requestStart,
+        software_release=instance.getRootSoftwareReleaseUrl(),
+        instance_xml="""DAMAGED<BAD?xml XMLversion="1.0" encoding="utf-8"?>""",
+        software_type=instance.getSourceReference(),
+        sla_xml=instance.getSlaXml(),
+        shared=shared,
+        )
 
   def stepCheckDamageSoftwareInstanceSiteConsistency(self, sequence, **kw):
     software_instance = self.portal.portal_catalog.getResultValue(

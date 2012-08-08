@@ -64,6 +64,7 @@ class TestVifibSkinSelection(testVifibMixin):
           'Multiflex',
           'ODS',
           'ODT',
+          'Outdated',
           'RSS',
           'View',
         ]
@@ -115,7 +116,6 @@ vifib_agent
 vifib_base
 vifib_cash
 vifib_core
-vifib_crm
 vifib_forge_release
 vifib_jauks_theme
 vifib_jauks_widget_library
@@ -123,6 +123,7 @@ vifib_open_trade
 vifib_payzen
 vifib_simulation
 vifib_slap
+vifib_slapos_rest_api
 vifib_software_pdm
 vifib_test
 vifib_web
@@ -141,6 +142,7 @@ erp5_accounting
 erp5_accounting_bbb
 erp5_administration
 erp5_base
+erp5_bearer_token
 erp5_commerce
 erp5_commerce_widget_library
 erp5_computer_immobilisation
@@ -148,6 +150,7 @@ erp5_content_translation
 erp5_core
 erp5_core_proxy_field_legacy
 erp5_credential
+erp5_credential_oauth2
 erp5_crm
 erp5_dhtml_style
 erp5_discount_resource
@@ -212,7 +215,6 @@ vifib_upgrader
 vifib_agent
 vifib_base
 vifib_core
-vifib_crm
 vifib_fiber_theme
 vifib_forge_release
 vifib_jauks_theme
@@ -221,6 +223,7 @@ vifib_open_trade
 vifib_payzen
 vifib_simulation
 vifib_slap
+vifib_slapos_rest_api
 vifib_software_pdm
 vifib_test
 vifib_web
@@ -240,6 +243,7 @@ erp5_accounting
 erp5_accounting_bbb
 erp5_administration
 erp5_base
+erp5_bearer_token
 erp5_commerce
 erp5_commerce_widget_library
 erp5_computer_immobilisation
@@ -247,6 +251,7 @@ erp5_content_translation
 erp5_core
 erp5_core_proxy_field_legacy
 erp5_credential
+erp5_credential_oauth2
 erp5_crm
 erp5_dhtml_style
 erp5_discount_resource
@@ -312,7 +317,6 @@ vifib_hosting
 vifib_agent
 vifib_base
 vifib_core
-vifib_crm
 vifib_forge_release
 vifib_hosting_theme
 vifib_jauks_theme
@@ -321,6 +325,7 @@ vifib_open_trade
 vifib_payzen
 vifib_simulation
 vifib_slap
+vifib_slapos_rest_api
 vifib_software_pdm
 vifib_test
 vifib_web
@@ -339,6 +344,7 @@ erp5_accounting
 erp5_accounting_bbb
 erp5_administration
 erp5_base
+erp5_bearer_token
 erp5_commerce
 erp5_commerce_widget_library
 erp5_computer_immobilisation
@@ -346,6 +352,7 @@ erp5_content_translation
 erp5_core
 erp5_core_proxy_field_legacy
 erp5_credential
+erp5_credential_oauth2
 erp5_crm
 erp5_dhtml_style
 erp5_discount_resource
@@ -410,12 +417,12 @@ vifib_upgrader
 vifib_agent
 vifib_base
 vifib_core
-vifib_crm
 vifib_forge_release
 vifib_open_trade
 vifib_payzen
 vifib_simulation
 vifib_slap
+vifib_slapos_rest_api
 vifib_software_pdm
 vifib_test
 vifib_web_ui_test
@@ -433,6 +440,7 @@ erp5_accounting
 erp5_accounting_bbb
 erp5_administration
 erp5_base
+erp5_bearer_token
 erp5_commerce
 erp5_commerce_widget_library
 erp5_computer_immobilisation
@@ -440,6 +448,7 @@ erp5_content_translation
 erp5_core
 erp5_core_proxy_field_legacy
 erp5_credential
+erp5_credential_oauth2
 erp5_crm
 erp5_dhtml_style
 erp5_discount_resource
@@ -502,12 +511,12 @@ vifib_upgrader
 vifib_agent
 vifib_base
 vifib_core
-vifib_crm
 vifib_forge_release
 vifib_open_trade
 vifib_payzen
 vifib_simulation
 vifib_slap
+vifib_slapos_rest_api
 vifib_software_pdm
 vifib_test
 vifib_web_ui_test
@@ -525,6 +534,7 @@ erp5_accounting
 erp5_accounting_bbb
 erp5_administration
 erp5_base
+erp5_bearer_token
 erp5_commerce
 erp5_commerce_widget_library
 erp5_computer_immobilisation
@@ -532,6 +542,7 @@ erp5_content_translation
 erp5_core
 erp5_core_proxy_field_legacy
 erp5_credential
+erp5_credential_oauth2
 erp5_crm
 erp5_dhtml_style
 erp5_discount_resource
@@ -594,12 +605,12 @@ vifib_upgrader
 vifib_agent
 vifib_base
 vifib_core
-vifib_crm
 vifib_forge_release
 vifib_open_trade
 vifib_payzen
 vifib_simulation
 vifib_slap
+vifib_slapos_rest_api
 vifib_software_pdm
 vifib_test
 vifib_web
@@ -618,6 +629,7 @@ erp5_accounting
 erp5_accounting_bbb
 erp5_administration
 erp5_base
+erp5_bearer_token
 erp5_commerce
 erp5_commerce_widget_library
 erp5_computer_immobilisation
@@ -625,6 +637,7 @@ erp5_content_translation
 erp5_core
 erp5_core_proxy_field_legacy
 erp5_credential
+erp5_credential_oauth2
 erp5_crm
 erp5_dhtml_style
 erp5_discount_resource
@@ -690,12 +703,12 @@ vifib_upgrader
 vifib_agent
 vifib_base
 vifib_core
-vifib_crm
 vifib_forge_release
 vifib_open_trade
 vifib_payzen
 vifib_simulation
 vifib_slap
+vifib_slapos_rest_api
 vifib_software_pdm
 vifib_test
 vifib_web_ui_test
@@ -713,6 +726,7 @@ erp5_accounting
 erp5_accounting_bbb
 erp5_administration
 erp5_base
+erp5_bearer_token
 erp5_commerce
 erp5_commerce_widget_library
 erp5_computer_immobilisation
@@ -720,6 +734,7 @@ erp5_content_translation
 erp5_core
 erp5_core_proxy_field_legacy
 erp5_credential
+erp5_credential_oauth2
 erp5_crm
 erp5_dhtml_style
 erp5_discount_resource
@@ -785,12 +800,12 @@ vifib_upgrader
 vifib_agent
 vifib_base
 vifib_core
-vifib_crm
 vifib_forge_release
 vifib_open_trade
 vifib_payzen
 vifib_simulation
 vifib_slap
+vifib_slapos_rest_api
 vifib_software_pdm
 vifib_test
 vifib_web_ui_test
@@ -808,6 +823,7 @@ erp5_accounting
 erp5_accounting_bbb
 erp5_administration
 erp5_base
+erp5_bearer_token
 erp5_commerce
 erp5_commerce_widget_library
 erp5_computer_immobilisation
@@ -815,6 +831,7 @@ erp5_content_translation
 erp5_core
 erp5_core_proxy_field_legacy
 erp5_credential
+erp5_credential_oauth2
 erp5_crm
 erp5_dhtml_style
 erp5_discount_resource
@@ -877,12 +894,12 @@ vifib_upgrader
 vifib_agent
 vifib_base
 vifib_core
-vifib_crm
 vifib_forge_release
 vifib_open_trade
 vifib_payzen
 vifib_simulation
 vifib_slap
+vifib_slapos_rest_api
 vifib_software_pdm
 vifib_test
 vifib_web_ui_test
@@ -900,6 +917,7 @@ erp5_accounting
 erp5_accounting_bbb
 erp5_administration
 erp5_base
+erp5_bearer_token
 erp5_commerce
 erp5_commerce_widget_library
 erp5_computer_immobilisation
@@ -907,6 +925,7 @@ erp5_content_translation
 erp5_core
 erp5_core_proxy_field_legacy
 erp5_credential
+erp5_credential_oauth2
 erp5_crm
 erp5_dhtml_style
 erp5_discount_resource
@@ -968,12 +987,12 @@ vifib_upgrader
 vifib_agent
 vifib_base
 vifib_core
-vifib_crm
 vifib_forge_release
 vifib_open_trade
 vifib_payzen
 vifib_simulation
 vifib_slap
+vifib_slapos_rest_api
 vifib_software_pdm
 vifib_test
 vifib_web_ui_test
@@ -991,6 +1010,7 @@ erp5_accounting
 erp5_accounting_bbb
 erp5_administration
 erp5_base
+erp5_bearer_token
 erp5_commerce
 erp5_commerce_widget_library
 erp5_computer_immobilisation
@@ -998,6 +1018,7 @@ erp5_content_translation
 erp5_core
 erp5_core_proxy_field_legacy
 erp5_credential
+erp5_credential_oauth2
 erp5_crm
 erp5_dhtml_style
 erp5_discount_resource

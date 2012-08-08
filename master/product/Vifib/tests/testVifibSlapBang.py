@@ -21,8 +21,9 @@ class TestVifibSlapBang(TestVifibSlapWebServiceMixin):
     common_kw = dict(
       software_release=sequence['software_release_uri'],
       software_type='any', instance_xml=self.minimal_correct_xml,
+      shared=False,
       sla_xml=self.minimal_correct_xml, state='stopped')
-    root_software_instance.requestSoftwareInstance(partition_reference=S1,
+    root_software_instance.requestInstance(software_title=S1,
       **common_kw)
     self.stepTic()
     self.stepCallConfirmOrderedSaleOrderAlarm()
@@ -30,13 +31,13 @@ class TestVifibSlapBang(TestVifibSlapWebServiceMixin):
 
     S1_instance = self.portal.portal_catalog.getResultValue(
       portal_type='Software Instance', title=S1)
-    S1_instance.requestSoftwareInstance(partition_reference=S2, **common_kw)
+    S1_instance.requestInstance(software_title=S2, **common_kw)
     self.stepTic()
-    S1_instance.requestSoftwareInstance(partition_reference=S3, **common_kw)
+    S1_instance.requestInstance(software_title=S3, **common_kw)
     self.stepCallConfirmOrderedSaleOrderAlarm()
     self.stepTic()
 
-    root_software_instance.requestSoftwareInstance(partition_reference=S4,
+    root_software_instance.requestInstance(software_title=S4,
       **common_kw)
     self.stepTic()
     self.stepCallConfirmOrderedSaleOrderAlarm()
@@ -49,10 +50,6 @@ class TestVifibSlapBang(TestVifibSlapWebServiceMixin):
     S4_instance = self.portal.portal_catalog.getResultValue(
       portal_type='Software Instance', title=S4)
 
-    S1_instance.stopComputerPartitionInstallation()
-    S2_instance.stopComputerPartitionInstallation()
-    S3_instance.stopComputerPartitionInstallation()
-    S4_instance.stopComputerPartitionInstallation()
     self.stepTic()
     sequence.edit(
       S0_uid = sequence['software_instance_uid'],
@@ -69,18 +66,7 @@ class TestVifibSlapBang(TestVifibSlapWebServiceMixin):
         sequence['computer_reference'],
         sequence['computer_partition_reference'])
     slap_computer_partition.bang(self.bang_message)
-
-  def stepProcessSoftwareInstanceList(self, sequence, **kw):
-    S0 = self.portal.portal_catalog.getResultValue(uid=sequence['S0_uid'])
-    S0.startComputerPartition()
-    S1 = self.portal.portal_catalog.getResultValue(uid=sequence['S1_uid'])
-    S1.stopComputerPartition()
-    S2 = self.portal.portal_catalog.getResultValue(uid=sequence['S2_uid'])
-    S2.stopComputerPartition()
-    S3 = self.portal.portal_catalog.getResultValue(uid=sequence['S3_uid'])
-    S3.stopComputerPartition()
-    S4 = self.portal.portal_catalog.getResultValue(uid=sequence['S4_uid'])
-    S4.stopComputerPartition()
+    sequence.edit(expected_bang_count=sequence.get('expected_bang_count', 2) + 1)
 
   def stepSetCurrentSoftwareInstanceS1(self, sequence, **kw):
     S1 = self.portal.portal_catalog.getResultValue(uid=sequence['S1_uid'])
@@ -98,31 +84,36 @@ class TestVifibSlapBang(TestVifibSlapWebServiceMixin):
         .getAggregateValue(portal_type='Computer Partition').getReference()
     )
 
-  def checkSoftwareInstanceBangMessage(self, software_instance):
-    bang_list = [q for q in software_instance.Base_getWorkflowHistoryItemList(
-      'software_instance_slap_interface_workflow')
-      if q.action == 'report_computer_partition_bang']
-    self.assertEqual(1, len(bang_list))
+  def checkSoftwareInstanceBangMessage(self, count, software_instance):
+    bang_list = [q for q in reversed(software_instance\
+      .Base_getWorkflowHistoryItemList('instance_slap_interface_workflow'))
+      if q.action == 'bang']
+    self.assertEqual(count, len(bang_list))
     self.assertEqual(self.bang_message, bang_list[0].comment)
 
   def stepCheckS0BangMessage(self, sequence, **kw):
     self.checkSoftwareInstanceBangMessage(
+      sequence['expected_bang_count'],
       self.portal.portal_catalog.getResultValue(uid=sequence['S0_uid']))
 
   def stepCheckS1BangMessage(self, sequence, **kw):
     self.checkSoftwareInstanceBangMessage(
+      sequence['expected_bang_count'],
       self.portal.portal_catalog.getResultValue(uid=sequence['S1_uid']))
 
   def stepCheckS2BangMessage(self, sequence, **kw):
     self.checkSoftwareInstanceBangMessage(
+      sequence['expected_bang_count'],
       self.portal.portal_catalog.getResultValue(uid=sequence['S1_uid']))
 
   def stepCheckS3BangMessage(self, sequence, **kw):
     self.checkSoftwareInstanceBangMessage(
+      sequence['expected_bang_count'],
       self.portal.portal_catalog.getResultValue(uid=sequence['S3_uid']))
 
   def stepCheckS4BangMessage(self, sequence, **kw):
     self.checkSoftwareInstanceBangMessage(
+      sequence['expected_bang_count'],
       self.portal.portal_catalog.getResultValue(uid=sequence['S3_uid']))
 
   def test_bang_computer_partition_complex_tree(self):
@@ -146,7 +137,7 @@ class TestVifibSlapBang(TestVifibSlapWebServiceMixin):
       FinishSoftwareInstanceTree
       Logout
       SlapLoginCurrentComputer
-      CheckEmptyComputerGetComputerPartitionCall
+      CheckSuccessComputerGetComputerPartitionCall
       SlapLogout
 
       SlapLoginCurrentSoftwareInstance
@@ -163,13 +154,11 @@ class TestVifibSlapBang(TestVifibSlapWebServiceMixin):
       SlapLogout
 
       LoginDefaultUser
-      ProcessSoftwareInstanceList
-      Tic
       SetCurrentSoftwareInstanceS1
       Logout
 
       SlapLoginCurrentComputer
-      CheckEmptyComputerGetComputerPartitionCall
+      CheckSuccessComputerGetComputerPartitionCall
       SlapLogout
 
       SlapLoginCurrentSoftwareInstance
@@ -186,13 +175,11 @@ class TestVifibSlapBang(TestVifibSlapWebServiceMixin):
       SlapLogout
 
       LoginDefaultUser
-      ProcessSoftwareInstanceList
-      Tic
       SetCurrentSoftwareInstanceS3
       Logout
 
       SlapLoginCurrentComputer
-      CheckEmptyComputerGetComputerPartitionCall
+      CheckSuccessComputerGetComputerPartitionCall
       SlapLogout
 
       SlapLoginCurrentSoftwareInstance
@@ -221,6 +208,7 @@ class TestVifibSlapBang(TestVifibSlapWebServiceMixin):
     slap_computer = self.slap.registerComputer(
       sequence['computer_reference'])
     slap_computer.bang(self.bang_message)
+    sequence.edit(expected_bang_count=sequence.get('expected_bang_count', 2) + 5)
 
   def stepCheckComputerBangMessage(self, sequence, **kw):
     computer = self.portal.portal_catalog.getResultValue(
@@ -252,7 +240,7 @@ class TestVifibSlapBang(TestVifibSlapWebServiceMixin):
       Logout
 
       SlapLoginCurrentComputer
-      CheckEmptyComputerGetComputerPartitionCall
+      CheckSuccessComputerGetComputerPartitionCall
       ComputerBang
       Tic
       SlapLogout
@@ -283,7 +271,7 @@ class TestVifibSlapBang(TestVifibSlapWebServiceMixin):
     sequence_string = self.prepare_started_computer_partition_sequence_string + \
       """
       SlapLoginCurrentComputer
-      CheckEmptyComputerGetComputerPartitionCall
+      CheckSuccessComputerGetComputerPartitionCall
       ComputerBang
       Tic
       SlapLogout
@@ -322,7 +310,7 @@ class TestVifibSlapBang(TestVifibSlapWebServiceMixin):
       Logout
 
       SlapLoginCurrentComputer
-      CheckEmptyComputerGetComputerPartitionCall
+      CheckSuccessComputerGetComputerPartitionCall
       SlapLogout
 
       SlapLoginTestVifibCustomer
@@ -379,11 +367,12 @@ class TestVifibSlapBang(TestVifibSlapWebServiceMixin):
     common_kw = dict(
       software_release=sequence['software_release_uri'],
       software_type='any', instance_xml=self.minimal_correct_xml,
+      shared=False,
       state='stopped')
     self.logout()
     self.login(sequence['software_instance_reference'])
-    root_software_instance.requestSoftwareInstance(
-      partition_reference=S1,
+    root_software_instance.requestInstance(
+      software_title=S1,
       sla_xml="""<?xml version='1.0' encoding='utf-8'?>
       <instance>
         <parameter id="computer_guid">%s</parameter>
@@ -400,8 +389,8 @@ class TestVifibSlapBang(TestVifibSlapWebServiceMixin):
     S1_reference = S1_instance.getReference()
     self.logout()
     self.login(S1_reference)
-    S1_instance.requestSoftwareInstance(
-      partition_reference=S2,
+    S1_instance.requestInstance(
+      software_title=S2,
       sla_xml="""<?xml version='1.0' encoding='utf-8'?>
       <instance>
         <parameter id="computer_guid">%s</parameter>
@@ -419,8 +408,8 @@ class TestVifibSlapBang(TestVifibSlapWebServiceMixin):
     self.logout()
 
     self.login(S2_reference)
-    S2_instance.requestSoftwareInstance(
-      partition_reference=S3,
+    S2_instance.requestInstance(
+      software_title=S3,
       sla_xml="""<?xml version='1.0' encoding='utf-8'?>
       <instance>
         <parameter id="computer_guid">%s</parameter>
@@ -438,17 +427,14 @@ class TestVifibSlapBang(TestVifibSlapWebServiceMixin):
     self.logout()
 
     self.login(S1_reference)
-    S1_instance.stopComputerPartitionInstallation()
     self.stepTic()
     self.logout()
 
     self.login(S2_reference)
-    S2_instance.stopComputerPartitionInstallation()
     self.stepTic()
     self.logout()
 
     self.login(S3_reference)
-    S3_instance.stopComputerPartitionInstallation()
     self.stepTic()
     self.logout()
 
@@ -466,14 +452,13 @@ class TestVifibSlapBang(TestVifibSlapWebServiceMixin):
 
     For tree like this:
 
-    S0
+    S0 (on non public C0)
       \
-       S1
+       S1 (on non public C1)
          \
-          S2
+          S2 (on non public C0)
 
-    Where S0 and S2 are on C0 and S1 is on C1 and both are non public it shall
-    work.
+    Bang shall work from all instances.
     """
     self.computer_partition_amount = 2
     sequence_list = SequenceList()
@@ -527,6 +512,7 @@ class TestVifibSlapBang(TestVifibSlapWebServiceMixin):
 
       # Request S0
       LoginTestVifibCustomer
+      SetSoftwareTitleRandom
       PersonRequestSoftwareInstance
       Tic
       Logout
@@ -537,14 +523,14 @@ class TestVifibSlapBang(TestVifibSlapWebServiceMixin):
       SelectCurrentlyUsedSalePackingListUid
       Logout
       LoginDefaultUser
-      CheckComputerPartitionInstanceSetupSalePackingListConfirmed
+      CheckComputerPartitionInstanceSetupSalePackingListDelivered
       Logout
       SlapLoginCurrentComputer
       SoftwareInstanceBuilding
       Tic
       SlapLogout
       LoginDefaultUser
-      CheckComputerPartitionInstanceSetupSalePackingListStarted
+      CheckComputerPartitionInstanceSetupSalePackingListDelivered
       Logout
       SlapLoginCurrentComputer
       SoftwareInstanceAvailable
@@ -552,11 +538,12 @@ class TestVifibSlapBang(TestVifibSlapWebServiceMixin):
       SlapLogout
       LoginDefaultUser
       SetSelectedComputerPartition
-      CheckComputerPartitionInstanceSetupSalePackingListStopped
+      CheckComputerPartitionInstanceSetupSalePackingListDelivered
       CheckComputerPartitionInstanceHostingSalePackingListConfirmed
       Logout
       LoginTestVifibCustomer
-      RequestSoftwareInstanceStart
+      SetSequenceSoftwareInstanceStateStarted
+      PersonRequestSoftwareInstance
       Tic
       Logout
       LoginDefaultUser
@@ -574,7 +561,7 @@ class TestVifibSlapBang(TestVifibSlapWebServiceMixin):
 
       Tic
       SlapLoginCurrentComputer
-      CheckEmptyComputerGetComputerPartitionCall
+      CheckSuccessComputerGetComputerPartitionCall
       ComputerBang
       Tic
       SlapLogout
@@ -594,12 +581,6 @@ class TestVifibSlapBang(TestVifibSlapWebServiceMixin):
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
-  def stepCheckComputerPartitionNoInstanceUpdateSalePackingList(self,
-      sequence, **kw):
-    self._checkComputerPartitionNoSalePackingList(
-        self.portal.portal_preferences.getPreferredInstanceUpdateResource(),
-        sequence)
-
   def test_computer_bang_not_called_on_destroying_destroyed(self):
     """Check that bang is ignoring destruction in progress and
        destroyed computer partitions"""
@@ -613,10 +594,6 @@ class TestVifibSlapBang(TestVifibSlapWebServiceMixin):
       Tic
       SlapLogout
 
-      LoginDefaultUser
-      CheckComputerPartitionNoInstanceUpdateSalePackingList
-      Logout
-
       SlapLoginCurrentComputer
       SoftwareInstanceDestroyed
       Tic
@@ -628,14 +605,10 @@ class TestVifibSlapBang(TestVifibSlapWebServiceMixin):
       Logout
 
       SlapLoginCurrentComputer
-      CheckEmptyComputerGetComputerPartitionCall
+      CheckSuccessComputerGetComputerPartitionCall
       ComputerBang
       Tic
       SlapLogout
-
-      LoginDefaultUser
-      CheckComputerPartitionNoInstanceUpdateSalePackingList
-      Logout
 
       LoginERP5TypeTestCase
       CheckSiteConsistency
@@ -653,12 +626,13 @@ class TestVifibSlapBang(TestVifibSlapWebServiceMixin):
     common_kw = dict(
       software_release=sequence['software_release_uri'],
       software_type='any', instance_xml=self.minimal_correct_xml,
+      shared=False,
       sla_xml=self.minimal_correct_xml, state='stopped')
     self.logout()
 
     self.login(sequence['software_instance_reference'])
-    root_software_instance.requestSoftwareInstance(
-      partition_reference=S1,
+    root_software_instance.requestInstance(
+      software_title=S1,
       **common_kw)
     self.stepTic()
     self.stepCallConfirmOrderedSaleOrderAlarm()
@@ -672,16 +646,24 @@ class TestVifibSlapBang(TestVifibSlapWebServiceMixin):
     self.logout()
 
     self.login(S1_reference)
-    S1_instance.stopComputerPartitionInstallation()
     self.logout()
 
     self.login(sequence['software_instance_reference'])
-    root_software_instance.requestDestroyComputerPartition()
+    root_software_instance.requestDestroy(
+        software_release=root_software_instance.getRootSoftwareReleaseUrl(),
+        instance_xml=root_software_instance.getTextContent(),
+        software_type=root_software_instance.getSourceReference(),
+        sla_xml=root_software_instance.getSlaXml(),
+        shared=root_software_instance.getPortalType() == 'Slave Instance',
+    )
     self.stepTic()
     self.logout()
-    
+
     self.login(sequence['computer_reference'])
-    root_software_instance.destroyComputerPartition()
+    self.portal.portal_slap.destroyedComputerPartition(
+      sequence['computer_reference'],
+      root_software_instance.getAggregateValue(
+        portal_type='Computer Partition').getReference())
     self.stepTic()
     self.logout()
 
@@ -701,14 +683,10 @@ class TestVifibSlapBang(TestVifibSlapWebServiceMixin):
       FinishSoftwareInstancePartlyDestroyedTree
 
       SlapLoginCurrentComputer
-      CheckEmptyComputerGetComputerPartitionCall
+      CheckSuccessComputerGetComputerPartitionCall
       ComputerBang
       Tic
       SlapLogout
-
-      LoginDefaultUser
-      CheckComputerPartitionNoInstanceUpdateSalePackingList
-      Logout
 
       LoginERP5TypeTestCase
       CheckSiteConsistency

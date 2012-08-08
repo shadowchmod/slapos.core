@@ -74,11 +74,7 @@
                 <item>
                     <key> <string>center</string> </key>
                     <value>
-                      <list>
-                        <string>my_start_button</string>
-                        <string>my_stop_button</string>
-                        <string>my_destroy_button</string>
-                      </list>
+                      <list/>
                     </value>
                 </item>
                 <item>
@@ -94,6 +90,10 @@
                         <string>my_section_title</string>
                         <string>my_reference</string>
                         <string>my_title</string>
+                        <string>your_new_title</string>
+                        <string>my_update_button</string>
+                        <string>my_root_software_release_url</string>
+                        <string>my_source_reference</string>
                         <string>your_status</string>
                       </list>
                     </value>
@@ -103,6 +103,7 @@
                     <value>
                       <list>
                         <string>your_connection_listbox</string>
+                        <string>my_text_content</string>
                       </list>
                     </value>
                 </item>
@@ -111,8 +112,6 @@
                     <value>
                       <list>
                         <string>your_system_message</string>
-                        <string>my_text_content</string>
-                        <string>my_update_button</string>
                       </list>
                     </value>
                 </item>

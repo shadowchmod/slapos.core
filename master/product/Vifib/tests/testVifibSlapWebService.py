@@ -55,7 +55,8 @@ DEFAULT_INSTANCE_DICT_PARAMETER_LIST = [
     'slap_partition_reference',
     'slap_software_release_url',
     'slap_software_type',
-    "slave_instance_list"
+    "slave_instance_list",
+    'timestamp',
 ]
 
 
@@ -130,6 +131,7 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
   # Assertions
   ########################################
   def assertSameDict(self, expected, got):
+    got = got.copy()
     issue_list = []
     for k, v in expected.items():
       if k not in got:
@@ -448,6 +450,9 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
     REMOTE_USER = "test_vifib_customer_a"
     self.login("test_vifib_customer_a")
 
+  def stepSetSoftwareTitleRandom(self, sequence, **kw):
+    sequence['software_title'] = str(random())
+
   def stepCheckComputerPartitionInstanceCleanupSalePackingListDoesNotExists(self,
       sequence, **kw):
     self._checkComputerPartitionSalePackingListDoesNotExists(
@@ -481,24 +486,6 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
   def stepCheckComputerPartitionInstanceSetupSalePackingListCancelled(self,
       sequence, **kw):
     self._checkComputerPartitionSalePackingListState('cancelled',
-        self.portal.portal_preferences.getPreferredInstanceSetupResource(),
-        sequence)
-
-  def stepCheckComputerPartitionInstanceSetupSalePackingListConfirmed(self,
-      sequence, **kw):
-    self._checkComputerPartitionSalePackingListState('confirmed',
-        self.portal.portal_preferences.getPreferredInstanceSetupResource(),
-        sequence)
-
-  def stepCheckComputerPartitionInstanceSetupSalePackingListStarted(self,
-      sequence, **kw):
-    self._checkComputerPartitionSalePackingListState('started',
-        self.portal.portal_preferences.getPreferredInstanceSetupResource(),
-        sequence)
-
-  def stepCheckComputerPartitionInstanceSetupSalePackingListStopped(self,
-      sequence, **kw):
-    self._checkComputerPartitionSalePackingListState('stopped',
         self.portal.portal_preferences.getPreferredInstanceSetupResource(),
         sequence)
 
@@ -596,42 +583,31 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
     if 'software_type' not in kw:
       kw['software_type'] = sequence.get('requested_software_type',
                                          'requested_software_type')
+    default_state = 'started'
     if 'state' not in kw:
-      kw['state'] = sequence.get('software_instance_state')
+      kw['state'] = sequence.get('software_instance_state', default_state) \
+        or default_state
 
     person.requestSoftwareInstance(
       software_release=software_release.getUrlString(),
       software_title=software_title,
+      software_type=kw['software_type'],
       instance_xml=self.minimal_correct_xml,
       sla_xml=sequence.get('sla_xml'),
-      **kw)
-    transaction.commit()
-    self.tic()
-    # Note: This is tricky part. Workflow methods does not return nothing
-    # so the only way is to find again the computer partition.
-    # But only title can be passed, that is why random is used to avoid
-    # duplication
+      shared=kw.get('shared', False),
+      state=kw['state'])
+
     software_instance_portal_type = kw.get("instance_portal_type",
                                   self.software_instance_portal_type)
-    software_instance_list = []
-    cleanup_resource = self.portal.portal_preferences\
-      .getPreferredInstanceCleanupResource()
-    for software_instance in self.portal.portal_catalog(
-        portal_type=software_instance_portal_type,
-        title=software_title):
-      try:
-        software_instance.Item_getInstancePackingListLine(cleanup_resource)
-      except ValueError:
-        software_instance_list.append(software_instance)
-    self.assertEqual(1, len(software_instance_list))
-    software_instance = software_instance_list[0]
-    sequence.edit(
-        root_software_instance_title=software_title,
-        software_instance_uid=software_instance.getUid(),
-        software_instance_reference=software_instance.getReference(),
-        hosting_subscription_uid=software_instance.getAggregateRelatedValue(
-          portal_type='Sale Order Line').getAggregateValue(
-            portal_type='Hosting Subscription').getUid())
+    software_instance = self.portal.REQUEST.get('request_instance')
+    hosting_subscription = self.portal.REQUEST.get('request_hosting_subscription')
+    if (software_instance is not None):
+      sequence.edit(
+          root_software_instance_title=software_title,
+          software_instance_uid=software_instance.getUid(),
+          software_instance_reference=software_instance.getReference(),
+          hosting_subscription_uid=hosting_subscription.getUid(),
+          )
 
   def stepSetComputerPartitionFromRootSoftwareInstance(self, sequence):
     computer_partition = self.portal.portal_catalog.getResultValue(
@@ -649,11 +625,7 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
     software instance"""
     software_instance = self.portal.portal_catalog.getResultValue(
         uid=sequence['software_instance_uid'])
-    delivery_line = [q for q in software_instance
-        .getAggregateRelatedValueList(
-          portal_type=self.sale_packing_list_line_portal_type)
-        if q.getSimulationState() in ['confirmed', 'started', 'stopped']][0]
-    computer_partition = delivery_line.getAggregateValue(
+    computer_partition = software_instance.getAggregateValue(
         portal_type=self.computer_partition_portal_type)
     sequence.edit(
       computer_partition_uid=computer_partition.getUid(),
@@ -661,24 +633,90 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
     )
 
   def stepRequestSoftwareInstanceDestroy(self, sequence, **kw):
-    self.portal.portal_catalog.getResultValue(
-        uid=sequence['software_instance_uid']).requestDestroyComputerPartition()
+    instance = self.portal.portal_catalog.getResultValue(
+        uid=sequence['software_instance_uid'])
+    if instance.getPortalType() == "Software Instance":
+      shared = False
+    elif instance.getPortalType() == "Slave Instance":
+      shared = True
+    else:
+      raise NotImplementedError
+    instance.requestDestroy(
+        software_release=instance.getRootSoftwareReleaseUrl(),
+        instance_xml=instance.getTextContent(),
+        software_type=instance.getSourceReference(),
+        sla_xml=instance.getSlaXml(),
+        shared=shared,
+        )
 
-  def stepRequestSoftwareInstanceDestroyRaisesValueError(self, sequence, **kw):
-    self.assertRaises(ValueError, self.portal.portal_catalog.getResultValue(
-        uid=sequence['software_instance_uid']).requestDestroyComputerPartition)
+  def stepRequestSoftwareInstanceDestroyRaisesUnsupportedWorkflowMethod(self,
+    sequence, **kw):
+    instance = self.portal.portal_catalog.getResultValue(
+        uid=sequence['software_instance_uid'])
+    if instance.getPortalType() == "Software Instance":
+      shared = False
+    elif instance.getPortalType() == "Slave Instance":
+      shared = True
+    else:
+      raise NotImplementedError
+    self.assertRaises(UnsupportedWorkflowMethod, instance.requestDestroy, 
+        software_release=instance.getRootSoftwareReleaseUrl(),
+        instance_xml=instance.getTextContent(),
+        software_type=instance.getSourceReference(),
+        sla_xml=instance.getSlaXml(),
+        shared=shared,
+        )
 
   def stepRequestSoftwareInstanceStart(self, sequence, **kw):
-    self.portal.portal_catalog.getResultValue(
-        uid=sequence['software_instance_uid']).requestStartComputerPartition()
+    instance = self.portal.portal_catalog.getResultValue(
+        uid=sequence['software_instance_uid'])
+    if instance.getPortalType() == "Software Instance":
+      shared = False
+    elif instance.getPortalType() == "Slave Instance":
+      shared = True
+    else:
+      raise NotImplementedError
+    instance.requestStart(
+        software_release=instance.getRootSoftwareReleaseUrl(),
+        instance_xml=instance.getTextContent(),
+        software_type=instance.getSourceReference(),
+        sla_xml=instance.getSlaXml(),
+        shared=shared,
+        )
 
   def stepRequestSoftwareInstanceStartRaisesValueError(self, sequence, **kw):
-    self.assertRaises(ValueError, self.portal.portal_catalog.getResultValue(
-        uid=sequence['software_instance_uid']).requestStartComputerPartition)
+    instance = self.portal.portal_catalog.getResultValue(
+        uid=sequence['software_instance_uid'])
+    if instance.getPortalType() == "Software Instance":
+      shared = False
+    elif instance.getPortalType() == "Slave Instance":
+      shared = True
+    else:
+      raise NotImplementedError
+    self.assertRaises(ValueError, instance.requestDestroy, 
+        software_release=instance.getRootSoftwareReleaseUrl(),
+        instance_xml=instance.getTextContent(),
+        software_type=instance.getSourceReference(),
+        sla_xml=instance.getSlaXml(),
+        shared=shared,
+        )
 
   def stepRequestSoftwareInstanceStop(self, sequence, **kw):
-    self.portal.portal_catalog.getResultValue(
-        uid=sequence['software_instance_uid']).requestStopComputerPartition()
+    instance = self.portal.portal_catalog.getResultValue(
+        uid=sequence['software_instance_uid'])
+    if instance.getPortalType() == "Software Instance":
+      shared = False
+    elif instance.getPortalType() == "Slave Instance":
+      shared = True
+    else:
+      raise NotImplementedError
+    instance.requestStop(
+        software_release=instance.getRootSoftwareReleaseUrl(),
+        instance_xml=instance.getTextContent(),
+        software_type=instance.getSourceReference(),
+        sla_xml=instance.getSlaXml(),
+        shared=shared,
+        )
 
   def stepRequestSoftwareInstallation(self, sequence, **kw):
     computer = self.portal.portal_catalog.getResultValue(
@@ -689,38 +727,6 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
 
     computer.requestSoftwareReleaseInstallation(
         software_release_url=software_release.getUrlString())
-
-  def stepCheckComputerPartitionSaleOrderAggregatedList(self, sequence):
-    portal_catalog = self.portal.portal_catalog
-    sale_packing_list = portal_catalog.getResultValue(
-        uid=sequence['sale_packing_list_uid'])
-    sale_packing_list_line = sale_packing_list.objectValues()[0]
-    computer_partition = sale_packing_list_line.getAggregateValue(
-        portal_type=self.computer_partition_portal_type)
-    sale_order_line_list = computer_partition.getAggregateRelatedValueList(
-        portal_type="Sale Order Line")
-    sale_order_line_1, sale_order_line_2 = sale_order_line_list
-    self.assertEquals(sale_order_line_1.getAggregateValue(
-                        portal_type=self.computer_partition_portal_type),
-                      sale_order_line_2.getAggregateValue(
-                        portal_type=self.computer_partition_portal_type))
-    self.assertEquals(2, len(sale_order_line_list))
-    sale_packing_line_list = computer_partition.getAggregateRelatedValueList(
-        portal_type="Sale Packing List Line")
-    self.assertEquals(2, len(sale_packing_line_list))
-    sale_packing_list_line_1, sale_packing_list_line_2 = sale_packing_line_list
-    self.assertEquals(sale_packing_list_line_1.getAggregateValue(
-                        portal_type=self.software_release_portal_type),
-                      sale_packing_list_line_2.getAggregateValue(
-                        portal_type=self.software_release_portal_type))
-    self.assertEquals(sale_packing_list_line_1.getAggregateValue(
-                        portal_type=self.computer_partition_portal_type),
-                      sale_packing_list_line_2.getAggregateValue(
-                        portal_type=self.computer_partition_portal_type))
-    hosting_1, hosting_2 = [hosting.getAggregateValue(
-      portal_type=self.hosting_subscription_portal_type) \
-          for hosting in sale_packing_line_list]
-    self.assertNotEquals(hosting_1, hosting_2)
 
   def _createComputer(self):
     # Mimics WebSection_registerNewComputer
@@ -925,6 +931,7 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
     payment = self.portal.portal_catalog.getResultValue(
         portal_type="Payment Transaction",
         simulation_state="planned")
+    payment.setStartDate(DateTime())
     payment.confirm()
     payment.start()
     payment.stop()
@@ -971,26 +978,52 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
       LoginTestVifibDeveloper
       SelectNewSoftwareReleaseUri
       CreateSoftwareRelease
-      Tic
+      CleanTic
       SubmitSoftwareRelease
-      Tic
+      CleanTic
       CreateSoftwareProduct
-      Tic
+      CleanTic
       ValidateSoftwareProduct
-      Tic
+      CleanTic
       SetSoftwareProductToSoftwareRelease
       PublishByActionSoftwareRelease
-      Tic
+      CleanTic
       Logout
   """
 
-  prepare_computer = """
+  # stabilise accounting until payment is reached
+  stabilise_accounting = """
+      CallVifibUpdateDeliveryCausalityStateAlarm
+      CleanTic
+      CallVifibExpandDeliveryLineAlarm
+      CleanTic
+      CallVifibTriggerBuildAlarm
+      CleanTic
+      CallVifibUpdateDeliveryCausalityStateAlarm
+      CleanTic
+      CallVifibExpandDeliveryLineAlarm
+      CleanTic
+      CallVifibTriggerBuildAlarm
+      CleanTic
+      CallVifibUpdateDeliveryCausalityStateAlarm
+      CleanTic
+      CallStopConfirmedSaleInvoiceTransactionAlarm
+      CleanTic
+      CallVifibExpandDeliveryLineAlarm
+      CleanTic
+      CallVifibTriggerBuildAlarm
+      CleanTic
+      CallVifibUpdateDeliveryCausalityStateAlarm
+      CleanTic
+  """
+
+  prepare_computer = stabilise_accounting + """
       LoginTestVifibAdmin
       CustomerRegisterNewComputer
-      Tic
+      CleanTic
       SetComputerCoordinatesFromComputerTitle
       ComputerSetAllocationScopeOpenPublic
-      Tic
+      CleanTic
       CheckComputerTradeConditionDestinationSectionListEmpty
       Logout
   """
@@ -998,7 +1031,7 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
   prepare_formated_computer = prepare_computer + """
       SlapLoginCurrentComputer
       FormatComputer
-      Tic
+      CleanTic
       SlapLogout
   """
 
@@ -1090,6 +1123,7 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
       SlapLogout
 
       LoginTestVifibCustomer
+      SetSoftwareTitleRandom
       PersonRequestSoftwareInstance
       Tic
       Logout
@@ -1103,7 +1137,7 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
       SelectCurrentlyUsedSalePackingListUid
       Logout
       LoginDefaultUser
-      CheckComputerPartitionInstanceSetupSalePackingListConfirmed
+      CheckComputerPartitionInstanceSetupSalePackingListDelivered
       Logout
   """
 
@@ -1114,7 +1148,7 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
       Tic \
       SlapLogout \
       LoginDefaultUser \
-      CheckComputerPartitionInstanceSetupSalePackingListStarted \
+      CheckComputerPartitionInstanceSetupSalePackingListDelivered \
       Logout \
     '
 
@@ -1126,7 +1160,7 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
       SlapLogout
       LoginDefaultUser
       SetSelectedComputerPartition
-      CheckComputerPartitionInstanceSetupSalePackingListStopped
+      CheckComputerPartitionInstanceSetupSalePackingListDelivered
       CheckComputerPartitionInstanceHostingSalePackingListConfirmed
       Logout
   """
@@ -1147,7 +1181,8 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
   prepare_destroy_requested_computer_partition = \
       prepare_installed_computer_partition_sequence_string + '\
       LoginTestVifibCustomer \
-      RequestSoftwareInstanceDestroy \
+      SetSequenceSoftwareInstanceStateDestroyed \
+      PersonRequestSoftwareInstance \
       Tic \
       Logout \
       \
@@ -1174,7 +1209,8 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
   prepare_start_requested_computer_partition_sequence_string = \
       prepare_installed_computer_partition_sequence_string + '\
       LoginTestVifibCustomer \
-      RequestSoftwareInstanceStart \
+      SetSequenceSoftwareInstanceStateStarted \
+      PersonRequestSoftwareInstance \
       Tic \
       Logout \
       LoginDefaultUser \
@@ -1194,14 +1230,11 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
       Logout \
   '
   prepare_stop_requested_computer_partition_sequence_string = \
-      prepare_started_computer_partition_sequence_string + '\
+      prepare_installed_computer_partition_sequence_string + '\
       LoginTestVifibCustomer \
-      RequestSoftwareInstanceStop \
+      SetSequenceSoftwareInstanceStateStopped \
+      PersonRequestSoftwareInstance \
       Tic \
-      Logout \
-      \
-      LoginDefaultUser \
-      CheckComputerPartitionInstanceHostingSalePackingListStopped \
       Logout \
   '
   prepare_stopped_computer_partition_sequence_string = \
@@ -1212,7 +1245,7 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
       SlapLogout \
       \
       LoginDefaultUser \
-      CheckComputerPartitionInstanceHostingSalePackingListDelivered \
+      CheckComputerPartitionInstanceHostingSalePackingListStopped \
       Logout \
   '
 
@@ -1439,15 +1472,25 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
       Tic \
       Logout \
       LoginERP5TypeTestCase \
+      CallVifibExpandDeliveryLineAlarm \
+      CleanTic \
+      CallVifibUpdateDeliveryCausalityStateAlarm \
+      CleanTic \
       CallVifibTriggerBuildAlarm \
-      Tic \
-      CallStopConfirmedSaleInvoiceTransactionAlarm \
-      Tic \
-      CallVifibTriggerBuildAlarm \
-      Tic \
+      CleanTic \
       CallVifibExpandDeliveryLineAlarm \
       CleanTic \
       CallVifibTriggerBuildAlarm \
+      CleanTic \
+      CallVifibUpdateDeliveryCausalityStateAlarm \
+      CleanTic \
+      CallStopConfirmedSaleInvoiceTransactionAlarm \
+      CleanTic \
+      CallVifibExpandDeliveryLineAlarm \
+      CleanTic \
+      CallVifibTriggerBuildAlarm \
+      CleanTic \
+      CallVifibExpandDeliveryLineAlarm \
       CleanTic \
       CallVifibUpdateDeliveryCausalityStateAlarm \
       CleanTic \
@@ -1455,6 +1498,8 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
 
   create_new_user_instance_sequence_string = '\
       LoginWebUser \
+      ResetSequenceSoftwareInstanceState \
+      SetSoftwareTitleRandom \
       PersonRequestSoftwareInstance \
       Tic \
       Logout \
@@ -1470,6 +1515,18 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
   ########################################
   # Steps
   ########################################
+
+  def stepResetSequenceSoftwareInstanceState(self, sequence, **kw):
+    sequence['software_instance_state'] = ''
+
+  def stepSetSequenceSoftwareInstanceStateStopped(self, sequence, **kw):
+    sequence['software_instance_state'] = 'stopped'
+
+  def stepSetSequenceSoftwareInstanceStateStarted(self, sequence, **kw):
+    sequence['software_instance_state'] = 'started'
+
+  def stepSetSequenceSoftwareInstanceStateDestroyed(self, sequence, **kw):
+    sequence['software_instance_state'] = 'destroyed'
 
   def stepCheckComputerTradeConditionDestinationSectionListEmpty(self,
       sequence, **kw):
@@ -1790,16 +1847,6 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
     self.slap.initializeConnection(self.server_url, timeout=None)
     computer = self.slap.registerComputer(computer_guid)
     self.assertRaises(slap.NotFoundError, computer.getComputerPartitionList)
-
-  def stepCheckEmptyComputerGetComputerPartitionCall(self, sequence, **kw):
-    """
-    Check that Computer.getComputerPartitionList is successfully called.
-    """
-    computer_guid = sequence["computer_reference"]
-    self.slap = slap.slap()
-    self.slap.initializeConnection(self.server_url, timeout=None)
-    computer = self.slap.registerComputer(computer_guid)
-    self.assertEquals([], computer.getComputerPartitionList())
 
   def stepSelectYetAnotherRequestedReference(self, sequence, **kw):
     sequence.edit(requested_reference='yet_another_requested_reference')
@@ -2154,10 +2201,22 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
     Base.serialize_call = Base.serialize
     Base.serialize = verify_serialize_call
 
+    instance = self.portal.portal_catalog.getResultValue(
+        uid=sequence['software_instance_uid'])
+    if instance.getPortalType() == "Software Instance":
+      shared = False
+    elif instance.getPortalType() == "Slave Instance":
+      shared = True
+    else:
+      raise NotImplementedError
     try:
-      self.assertRaises(DummyTestException,
-        self.portal.portal_catalog.getResultValue(
-        uid=sequence['software_instance_uid']).requestDestroyComputerPartition)
+      self.assertRaises(DummyTestException,instance.requestDestroy, 
+        software_release=instance.getRootSoftwareReleaseUrl(),
+        instance_xml=instance.getTextContent(),
+        software_type=instance.getSourceReference(),
+        sla_xml=instance.getSlaXml(),
+        shared=shared,
+        )
     finally:
       Base.serialize = Base.serialize_call
 
@@ -2335,11 +2394,18 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
     Check that Computer.getComputerPartitionList is successfully called.
     """
     computer_guid = sequence["computer_reference"]
+    computer_uid = sequence["computer_uid"]
+    erp5_computer = self.portal.portal_catalog.unrestrictedSearchResults(
+        uid=computer_uid)[0].getObject()
+    computer_partition_amount = len([x for x in \
+      erp5_computer.contentValues(portal_type="Computer Partition") \
+      if x.getSlapState() == "busy"])
+
     self.slap = slap.slap()
     self.slap.initializeConnection(self.server_url, timeout=None)
     computer = self.slap.registerComputer(computer_guid)
     computer_partition_list = computer.getComputerPartitionList()
-    self.assertEquals(self.computer_partition_amount,
+    self.assertEquals(computer_partition_amount,
                       len(computer_partition_list))
 
   def stepCheckSuccessComputerPartitionGetIdCall(self, sequence, **kw):
@@ -2395,7 +2461,8 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
     self.slap = slap.slap()
     self.slap.initializeConnection(self.server_url, timeout=None)
     computer = self.slap.registerComputer(computer_guid)
-    self.assertEquals([], computer.getSoftwareReleaseList())
+    self.assertEquals([], [q for q in computer.getSoftwareReleaseList() \
+      if q.getState() != 'destroyed'])
 
   def stepCheckDestroyedStateGetSoftwareReleaseListCall(self, sequence, **kw):
     """
@@ -2855,7 +2922,6 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
         specialise='sale_trade_condition_module/vifib_trade_condition',
         source='organisation_module/vifib_internet',
         source_section='organisation_module/vifib_internet',
-        source_decision='organisation_module/vifib_internet',
         # XXX Hardcoded values
         destination='person_module/test_vifib_customer',
         destination_section='person_module/test_vifib_customer',
@@ -3177,29 +3243,16 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
     and Software Instance"""
     computer_partition = self.portal.portal_catalog.getResultValue(
         uid=sequence['computer_partition_uid'])
-    state_list = []
-    state_list.extend(self.portal.getPortalCurrentInventoryStateList())
-    state_list.extend(self.portal.getPortalReservedInventoryStateList())
-    state_list.extend(self.portal.getPortalTransitInventoryStateList())
-    service_uid_list = []
-    for service_relative_url in \
-      (self.portal.portal_preferences.getPreferredInstanceSetupResource(),
-       self.portal.portal_preferences.getPreferredInstanceHostingResource(),
-       self.portal.portal_preferences.getPreferredInstanceCleanupResource(),
-       ):
-      service = self.portal.restrictedTraverse(service_relative_url)
-      service_uid_list.append(service.getUid())
-    delivery_line = self.portal.portal_catalog.getResultValue(
-      portal_type=self.sale_packing_list_line_portal_type,
-      simulation_state=state_list,
-      aggregate_relative_url=computer_partition.getRelativeUrl(),
-      default_resource_uid=service_uid_list,
-      sort_on=(('movement.start_date', 'DESC'),),
-      limit=1,
-    )
-
-    self.assertNotEqual(None, delivery_line)
-    delivery = delivery_line.getParentValue()
+    software_instance = self.portal.portal_catalog.getResultValue(
+        portal_type="Software Instance",
+        default_aggregate_uid=sequence['computer_partition_uid'])
+    delivery = software_instance.getCausalityValue(
+        portal_type="Sale Packing List")
+    if delivery is None:
+      order = software_instance.getCausalityValue(
+          portal_type="Sale Order")
+      delivery = order.getCausalityRelatedValue(
+          portal_type="Sale Packing List")
     sequence.edit(sale_packing_list_uid=delivery.getUid())
 
   def stepCheckSalePackingListErrorText(self, sequence, **kw):
@@ -3647,7 +3700,7 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
     sale_packing_list_line_list = computer_partition\
         .getAggregateRelatedValueList(
             portal_type=self.sale_packing_list_line_portal_type)
-    self.assertEqual(1, len(sale_packing_list_line_list))
+    self.assertEqual(2, len(sale_packing_list_line_list))
     sale_packing_list_line = sale_packing_list_line_list[0]
     software_instance = sale_packing_list_line.getAggregateValue(
         portal_type=self.software_instance_portal_type)
@@ -3655,15 +3708,20 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
     software_instance_sale_packing_list_line_list = software_instance\
         .getAggregateRelatedList(
             portal_type=self.sale_packing_list_line_portal_type)
-    self.assertEqual(1, len(software_instance_sale_packing_list_line_list))
+    self.assertEqual(2, len(software_instance_sale_packing_list_line_list))
 
   def _checkSoftwareInstanceAndRelatedPartition(self, software_instance,
       partition_portal_type=computer_partition_portal_type):
-    # There should be only one Sale Packing List Line
+    # There should be two Sale Packing List Line
     sale_packing_list_line_list = software_instance\
         .getAggregateRelatedValueList(
             portal_type=self.sale_packing_list_line_portal_type)
-    self.assertEqual(1, len(sale_packing_list_line_list))
+    if (software_instance.getSlapState() == "start_requested"):
+      expected_count = 2
+    else:
+      expected_count = 1
+
+    self.assertEqual(expected_count, len(sale_packing_list_line_list))
     sale_packing_list_line = sale_packing_list_line_list[0]
 
     # This Sale Packing List Line shall have only one Computer Partition
@@ -3673,11 +3731,11 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
 
     computer_partition = computer_partition_list[0]
 
-    # This Computer Partition shall have only Sale Packing List Line related
+    # This Computer Partition shall have two Sale Packing List Line related
     computer_partition_sale_packing_list_line_list = computer_partition\
         .getAggregateRelatedValueList(
             portal_type=self.sale_packing_list_line_portal_type)
-    self.assertEqual(1, len(computer_partition_sale_packing_list_line_list))
+    self.assertEqual(expected_count, len(computer_partition_sale_packing_list_line_list))
 
   def stepCheckPersonRequestedSoftwareInstanceAndRelatedComputerPartition(self,
     sequence, **kw):
@@ -3687,9 +3745,12 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
     computer_partition = self._softwareInstance_getComputerPartition(
       software_instance)
     # There should be only one Sale Packing List Line
-    sale_packing_list_line_list = software_instance\
-        .getAggregateRelatedValueList(
-            portal_type=self.sale_packing_list_line_portal_type)
+    sale_packing_list_line_list = self.portal.portal_catalog(
+      portal_type=self.sale_packing_list_line_portal_type,
+      default_aggregate_uid=software_instance.getUid(),
+      default_resource_uid=self.portal.restrictedTraverse(self.portal\
+        .portal_preferences.getPreferredInstanceSetupResource()).getUid()
+    )
     self.assertEqual(1, len(sale_packing_list_line_list))
     sale_packing_list_line = sale_packing_list_line_list[0]
     # This Sale Packing List Line shall have only one Computer Partition
@@ -3705,7 +3766,9 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
         .getAggregateRelatedValueList(
             portal_type=self.sale_packing_list_line_portal_type):
       if sequence['software_instance_uid'] in delivery_line\
-          .getAggregateUidList():
+          .getAggregateUidList() and delivery_line\
+          .getResource() == self.portal.portal_preferences\
+            .getPreferredInstanceSetupResource():
         computer_partition_sale_packing_list_line_list.append(delivery_line)
     self.assertEqual(1, len(computer_partition_sale_packing_list_line_list))
 
@@ -3879,6 +3942,9 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
     portal_type_list = [instance.getPortalType() for instance in instance_list]
     expected_portal_type_list = [self.slave_instance_portal_type,
         self.slave_instance_portal_type,
+        self.slave_instance_portal_type,
+        self.slave_instance_portal_type,
+        self.software_instance_portal_type,
         self.software_instance_portal_type]
     self.assertEquals(expected_portal_type_list, sorted(portal_type_list))
     computer_partition_list = [obj.getAggregateValue(
@@ -3934,7 +4000,7 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
           for obj in sale_packing_list_line_list]
     self.assertEquals(computer_partition_list[0],
         computer_partition_list[1])
-    self.assertEquals(2, len(computer_partition_list))
+    self.assertEquals(4, len(computer_partition_list))
 
   def stepCheckSlaveInstanceNotReady(self, sequence):
     slave_instance = self.portal.portal_catalog.getResultValue(
@@ -4031,20 +4097,56 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
     return slave_instance
 
   def stepRequestDestroySoftwareInstanceFromCurrentComputerPartition(self, sequence):
-    software_instance = self._getSoftwareInstanceFromCurrentComputerPartition(
+    instance = self._getSoftwareInstanceFromCurrentComputerPartition(
         sequence)
-    software_instance.requestDestroyComputerPartition()
+    if instance.getPortalType() == "Software Instance":
+      shared = False
+    elif instance.getPortalType() == "Slave Instance":
+      shared = True
+    else:
+      raise NotImplementedError
+    instance.requestDestroy(
+        software_release=instance.getRootSoftwareReleaseUrl(),
+        instance_xml=instance.getTextContent(),
+        software_type=instance.getSourceReference(),
+        sla_xml=instance.getSlaXml(),
+        shared=shared,
+        )
 
   def stepStartSoftwareInstanceFromCurrentComputerPartition(self, sequence):
-    software_instance = self._getSoftwareInstanceFromCurrentComputerPartition(
+    instance = self._getSoftwareInstanceFromCurrentComputerPartition(
         sequence)
-    software_instance.requestStartComputerPartition()
+    if instance.getPortalType() == "Software Instance":
+      shared = False
+    elif instance.getPortalType() == "Slave Instance":
+      shared = True
+    else:
+      raise NotImplementedError
+    instance.requestStart(
+        software_release=instance.getRootSoftwareReleaseUrl(),
+        instance_xml=instance.getTextContent(),
+        software_type=instance.getSourceReference(),
+        sla_xml=instance.getSlaXml(),
+        shared=shared,
+        )
 
   def stepRequestStopSoftwareInstanceFromCurrentComputerPartition(self,
       sequence):
-    software_instance = self._getSoftwareInstanceFromCurrentComputerPartition(
+    instance = self._getSoftwareInstanceFromCurrentComputerPartition(
         sequence)
-    software_instance.requestStopComputerPartition()
+    if instance.getPortalType() == "Software Instance":
+      shared = False
+    elif instance.getPortalType() == "Slave Instance":
+      shared = True
+    else:
+      raise NotImplementedError
+    instance.requestStop(
+        software_release=instance.getRootSoftwareReleaseUrl(),
+        instance_xml=instance.getTextContent(),
+        software_type=instance.getSourceReference(),
+        sla_xml=instance.getSlaXml(),
+        shared=shared,
+        )
 
   def stepCheckSalePackingListFromSlaveInstanceAccessUsingSoftwareInstanceUser(self,
       sequence):
@@ -4123,19 +4225,38 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
         software_instance.getConnectionXml())
 
   def stepSlaveInstanceStarted(self, sequence):
-    slave_instance = self.portal.portal_catalog.getResultValue(
+    instance = self.portal.portal_catalog.getResultValue(
         uid=sequence["software_instance_uid"])
-    slave_instance.startComputerPartition()
+    if instance.getPortalType() == "Software Instance":
+      shared = False
+    elif instance.getPortalType() == "Slave Instance":
+      shared = True
+    else:
+      raise NotImplementedError
+    instance.requestStart(
+        software_release=instance.getRootSoftwareReleaseUrl(),
+        instance_xml=instance.getTextContent(),
+        software_type=instance.getSourceReference(),
+        sla_xml=instance.getSlaXml(),
+        shared=shared,
+        )
 
   def stepSlaveInstanceStopped(self, sequence):
-    slave_instance = self.portal.portal_catalog.getResultValue(
+    instance = self.portal.portal_catalog.getResultValue(
         uid=sequence["software_instance_uid"])
-    slave_instance.stopComputerPartition()
-
-  def stepSlaveInstanceStopComputerPartitionInstallation(self, sequence):
-    slave_instance = self.portal.portal_catalog.getResultValue(
-        uid=sequence["software_instance_uid"])
-    slave_instance.stopComputerPartitionInstallation()
+    if instance.getPortalType() == "Software Instance":
+      shared = False
+    elif instance.getPortalType() == "Slave Instance":
+      shared = True
+    else:
+      raise NotImplementedError
+    instance.requestStop(
+        software_release=instance.getRootSoftwareReleaseUrl(),
+        instance_xml=instance.getTextContent(),
+        software_type=instance.getSourceReference(),
+        sla_xml=instance.getSlaXml(),
+        shared=shared,
+        )
 
   def stepSetDeliveryLineAmountEqualZero(self, sequence):
     sequence.edit(delivery_line_amount=0)
@@ -4151,6 +4272,10 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
 
   def stepSetRandomRequestedReference(self, sequence, **kw):
     sequence['requested_reference'] = self.id() + str(random())
+
+  def stepSetRandomRequestedReferenceAndTitle(self, sequence, **kw):
+    sequence['requested_reference'] = self.id() + str(random())
+    sequence['software_title'] = sequence['requested_reference']
 
   def stepRenameCurrentSoftwareInstanceDead(self, sequence, **kw):
     software_instance = self.portal.portal_catalog.getResultValue(
@@ -4299,7 +4424,7 @@ class TestVifibSlapWebService(TestVifibSlapWebServiceMixin):
     sequence_string = self\
         .prepare_installed_computer_partition_sequence_string + '\
       SlapLoginCurrentComputer \
-      CheckRaisesNotFoundComputerPartitionDestroyedCall \
+      CheckSuccessComputerPartitionDestroyedCall \
       SlapLogout \
       LoginERP5TypeTestCase \
       CheckSiteConsistency \
@@ -4325,7 +4450,8 @@ class TestVifibSlapWebService(TestVifibSlapWebServiceMixin):
     sequence_string = self\
         .prepare_installed_computer_partition_sequence_string + '\
       LoginTestVifibCustomer \
-      RequestSoftwareInstanceDestroy \
+      SetSequenceSoftwareInstanceStateDestroyed \
+      PersonRequestSoftwareInstance \
       Tic \
       Logout \
       SlapLoginCurrentComputer \
@@ -4437,7 +4563,8 @@ class TestVifibSlapWebService(TestVifibSlapWebServiceMixin):
   def test_person_from_credential_request_software_instance(self):
     """Checks that person created from web can use the system"""
     sequence_list = SequenceList()
-    sequence_string = self.prepare_published_software_release + \
+    sequence_string = self.stabilise_accounting + \
+        self.prepare_published_software_release + \
         self.prepare_formated_computer + """
       LoginTestVifibAdmin
       RequestSoftwareInstallation
@@ -4472,7 +4599,7 @@ class TestVifibSlapWebService(TestVifibSlapWebServiceMixin):
       Tic
       SetSelectedComputerPartition
       SelectCurrentlyUsedSalePackingListUid
-      CheckComputerPartitionInstanceSetupSalePackingListConfirmed
+      CheckComputerPartitionInstanceSetupSalePackingListDelivered
       Logout
 
       LoginERP5TypeTestCase
@@ -4524,6 +4651,9 @@ class TestVifibSlapWebService(TestVifibSlapWebServiceMixin):
       LoginWebUser
       CheckPersonUpdatedCredential
       Logout
+
+      CallVifibUpdateDeliveryCausalityStateAlarm
+      CleanTic
 
       LoginERP5TypeTestCase
       CheckSiteConsistency

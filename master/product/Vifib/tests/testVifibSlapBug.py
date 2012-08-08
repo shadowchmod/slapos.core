@@ -13,6 +13,10 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       PersonRequestSoftwareInstance \
       Tic \
       Logout \
+      CallConfirmOrderedSaleOrderAlarm \
+      CleanTic \
+      CallVifibTriggerBuildAlarm \
+      CleanTic \
       LoginERP5TypeTestCase \
       CheckSiteConsistency \
       Logout \
@@ -43,7 +47,7 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
         .prepare_stopped_computer_partition_sequence_string + """
       LoginTestVifibCustomer
       RequestSoftwareInstanceStart
-      RequestSoftwareInstanceStartRaisesValueError
+      RequestSoftwareInstanceStart
       Tic
       Logout
 
@@ -58,47 +62,19 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
-  def test_bug_doubleClickOnStart_serializeIsCalled(self):
-    sequence_list = SequenceList()
-    sequence_string = self\
-        .prepare_stopped_computer_partition_sequence_string + """
-      LoginTestVifibCustomer
-      RequestSoftwareInstanceStartCheckSerializeIsCalled
-
-      LoginERP5TypeTestCase
-      CheckSiteConsistency
-      Logout
-    """
-    sequence_list.addSequenceString(sequence_string)
-    sequence_list.play(self)
-
   def test_bug_doubleClickOnDestroy(self):
     sequence_list = SequenceList()
     sequence_string = self\
         .prepare_installed_computer_partition_sequence_string + """
       LoginTestVifibCustomer
       RequestSoftwareInstanceDestroy
-      RequestSoftwareInstanceDestroyRaisesValueError
+      RequestSoftwareInstanceDestroyRaisesUnsupportedWorkflowMethod
       Tic
       Logout
 
       LoginDefaultUser
       CheckComputerPartitionInstanceCleanupSalePackingListConfirmed
       Logout
-
-      LoginERP5TypeTestCase
-      CheckSiteConsistency
-      Logout
-      """
-    sequence_list.addSequenceString(sequence_string)
-    sequence_list.play(self)
-
-  def test_bug_doubleClickOnDestroy_serializeIsCalled(self):
-    sequence_list = SequenceList()
-    sequence_string = self\
-        .prepare_installed_computer_partition_sequence_string + """
-      LoginTestVifibCustomer
-      RequestSoftwareInstanceDestroyCheckSerializeIsCalled
 
       LoginERP5TypeTestCase
       CheckSiteConsistency
@@ -287,7 +263,7 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       StoreCurrentSoftwareInstanceUidBufferA
 
       LoginDefaultUser
-      CheckComputerPartitionInstanceSetupSalePackingListConfirmed
+      CheckComputerPartitionInstanceSetupSalePackingListDelivered
       Logout
 
       # Start it..
@@ -298,7 +274,7 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
 
       LoginDefaultUser
       SetSelectedComputerPartition
-      CheckComputerPartitionInstanceSetupSalePackingListStopped
+      CheckComputerPartitionInstanceSetupSalePackingListDelivered
       CheckComputerPartitionInstanceHostingSalePackingListConfirmed
       Logout
 
@@ -328,7 +304,7 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       SlapLogout
 
       LoginDefaultUser
-      CheckComputerPartitionInstanceHostingSalePackingListDelivered
+      CheckComputerPartitionInstanceHostingSalePackingListStopped
       Logout
 
       # ...and request destruction
@@ -338,6 +314,7 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       Logout
 
       LoginDefaultUser
+      CheckComputerPartitionInstanceHostingSalePackingListDelivered
       CheckComputerPartitionInstanceCleanupSalePackingListConfirmed
       Logout
 
@@ -415,7 +392,7 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
 
       LoginDefaultUser
       SetSelectedComputerPartition
-      CheckComputerPartitionInstanceSetupSalePackingListStopped
+      CheckComputerPartitionInstanceSetupSalePackingListDelivered
       CheckComputerPartitionInstanceHostingSalePackingListConfirmed
       Logout
 
@@ -445,7 +422,7 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       SlapLogout
 
       LoginDefaultUser
-      CheckComputerPartitionInstanceHostingSalePackingListDelivered
+      CheckComputerPartitionInstanceHostingSalePackingListStopped
       Logout
 
       # Now request destruction of second software instance...
@@ -456,6 +433,7 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       Logout
 
       LoginDefaultUser
+      CheckComputerPartitionInstanceHostingSalePackingListDelivered
       CheckComputerPartitionInstanceCleanupSalePackingListConfirmed
       Logout
 
@@ -534,7 +512,7 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       CheckComputerPartitionInstanceSetupSalePackingListDelivered
       CheckComputerPartitionInstanceCleanupSalePackingListDelivered
       CheckComputerPartitionIsFree
-      CheckComputerPartitionNoInstanceHostingSalePackingList
+      CheckComputerPartitionInstanceHostingSalePackingListDelivered
       Logout
 
       LoginERP5TypeTestCase
@@ -567,18 +545,6 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       CheckComputerPartitionInstanceCleanupSalePackingListCancelled
       Logout
 
-      # So all packing lists are finished, but one is cancelled,
-      # time to request destruction...
-
-      LoginDefaultUser
-      RequestSoftwareInstanceDestroy
-      Tic
-      Logout
-
-      LoginDefaultUser
-      CheckComputerPartitionInstanceCleanupSalePackingListConfirmed
-      Logout
-
       # ...and destroy it
 
       SlapLoginCurrentComputer
@@ -587,7 +553,7 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       SlapLogout
 
       LoginDefaultUser
-      CheckComputerPartitionInstanceCleanupSalePackingListDelivered
+      CheckComputerPartitionInstanceCleanupSalePackingListCancelled
       CheckComputerPartitionIsFree
       Logout
 
@@ -656,7 +622,7 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       Logout
 
       LoginDefaultUser
-      CheckComputerPartitionInstanceSetupSalePackingListConfirmed
+      CheckComputerPartitionInstanceSetupSalePackingListDelivered
       Logout
 
       # Request destruction...
@@ -694,10 +660,10 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       uid = sequence['software_instance_uid'])
     from erp5.document.SoftwareInstance import DisconnectedSoftwareTree
     self.assertRaises(DisconnectedSoftwareTree,
-      software_instance.requestSoftwareInstance,
+      software_instance.requestInstance,
       software_release=sequence['software_release_uri'],
       software_type=sequence['requested_reference'],
-      partition_reference=sequence['requested_reference'],
+      software_title=sequence['requested_reference'],
       shared=False,
       instance_xml=self.minimal_correct_xml,
       sla_xml=self.minimal_correct_xml,
@@ -775,7 +741,7 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       Logout
 
       LoginDefaultUser
-      CheckComputerPartitionInstanceSetupSalePackingListConfirmed
+      CheckComputerPartitionInstanceSetupSalePackingListDelivered
       Logout
 
       # From root request B
@@ -859,10 +825,10 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       uid = sequence['software_instance_uid'])
     from erp5.document.SoftwareInstance import CyclicSoftwareTree
     self.assertRaises(CyclicSoftwareTree,
-      software_instance.requestSoftwareInstance,
+      software_instance.requestInstance,
       software_release=sequence['software_release_uri'],
       software_type=sequence['requested_reference'],
-      partition_reference=sequence['requested_reference'],
+      software_title=sequence['requested_reference'],
       shared=False,
       instance_xml=self.minimal_correct_xml,
       sla_xml=self.minimal_correct_xml,
@@ -940,7 +906,7 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       Logout
 
       LoginDefaultUser
-      CheckComputerPartitionInstanceSetupSalePackingListConfirmed
+      CheckComputerPartitionInstanceSetupSalePackingListDelivered
       Logout
 
       # From root request B
@@ -1034,10 +1000,10 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
     software_instance = self.portal.portal_catalog.getResultValue(
       uid = sequence['software_instance_uid'])
     self.assertRaises(ValueError,
-      software_instance.requestSoftwareInstance,
+      software_instance.requestInstance,
       software_release=sequence['software_release_uri'],
       software_type=sequence['requested_reference'],
-      partition_reference=sequence['requested_reference'],
+      software_title=sequence['requested_reference'],
       shared=False,
       instance_xml=self.minimal_correct_xml,
       sla_xml=self.minimal_correct_xml,
@@ -1112,7 +1078,7 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       Logout
 
       LoginDefaultUser
-      CheckComputerPartitionInstanceSetupSalePackingListConfirmed
+      CheckComputerPartitionInstanceSetupSalePackingListDelivered
       Logout
 
       # From root request B
@@ -1212,6 +1178,9 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
+  def stepSetSequenceSoftwareInstanceRequestedStateDestroyed(self, sequence, **kw):
+    sequence['requested_state'] = 'destroyed'
+
   def test_request_new_with_destroyed_while_looking_for_partition_reference(self):
     """Prove that having destroyed SI allows to request new one with same
       reference, when destruction was done while looking for new partition"""
@@ -1229,7 +1198,7 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       Tic
       SlapLogout
 
-      SetRandomRequestedReference
+      SetRandomRequestedReferenceAndTitle
       SlapLoginTestVifibCustomer
       PersonRequestSlapSoftwareInstancePrepare
       Tic
@@ -1251,7 +1220,8 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       Logout
 
       LoginTestVifibCustomer
-      RequestSoftwareInstanceDestroy
+      SetSequenceSoftwareInstanceStateDestroyed
+      PersonRequestSoftwareInstance
       Tic
       Logout
 
@@ -1319,7 +1289,7 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       SetSelectedComputerPartition
       SetRequestedComputerPartition
       CheckComputerPartitionNoInstanceHostingSalePackingList
-      CheckComputerPartitionInstanceSetupSalePackingListConfirmed
+      CheckComputerPartitionInstanceSetupSalePackingListDelivered
       Logout
 
       LoginTestVifibCustomer
@@ -1362,7 +1332,8 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       SetSelectedComputerPartition
       SetRequestedComputerPartition
       CheckComputerPartitionNoInstanceHostingSalePackingList
-      CheckComputerPartitionInstanceSetupSalePackingListConfirmed
+      CheckComputerPartitionInstanceSetupSalePackingListDelivered
+      Tic
       Logout
 
       LoginERP5TypeTestCase
@@ -1371,9 +1342,6 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       """
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
-
-  def stepSetSoftwareTitleRandom(self, sequence, **kw):
-    sequence['software_title'] = str(random.random())
 
   def test_request_new_with_destroyed_reference_web_ui(self):
     """Prove that having destroyed SI allows to request new one with same
@@ -1387,6 +1355,7 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       """
 
       LoginTestVifibCustomer
+      SetSequenceSoftwareInstanceStateStopped
       PersonRequestSoftwareInstance
       Tic
       Logout
@@ -1398,7 +1367,7 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       SelectCurrentlyUsedSalePackingListUid
       Logout
       LoginDefaultUser
-      CheckComputerPartitionInstanceSetupSalePackingListConfirmed
+      CheckComputerPartitionInstanceSetupSalePackingListDelivered
       Logout
 
       LoginERP5TypeTestCase
@@ -1470,7 +1439,7 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       Logout
       LoginDefaultUser
       CheckComputerPartitionInTable
-      CheckComputerPartitionInstanceSetupSalePackingListConfirmed
+      CheckComputerPartitionInstanceSetupSalePackingListDelivered
       Logout
 
       LoginERP5TypeTestCase
@@ -1483,10 +1452,11 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
   def stepSetSoftwareInstanceUidToCurrentSlave(self, sequence, **kw):
     computer_partition = self.portal.portal_catalog.getResultValue(uid=sequence[
       'computer_partition_uid'])
-    instance_setup_packing_list = computer_partition\
-      .Item_getInstancePackingListLine()
-    slave_instance = instance_setup_packing_list.getAggregateValue(
-        portal_type='Slave Instance')
+    slave_instance = self.portal.portal_catalog.getResultValue(
+      portal_type="Slave Instance",
+      validation_state="validated",
+      default_aggregate_uid=computer_partition.getUid(),
+      )
     sequence['software_instance_uid'] = slave_instance.getUid()
 
   def test_catalog_slave_destruction(self):

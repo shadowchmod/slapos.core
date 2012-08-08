@@ -74,7 +74,7 @@ class TestVifibSlapAllocationScope(TestVifibSlapWebServiceMixin):
     to owner"""
     self.computer_partition_amount = 2
     sequence_list = SequenceList()
-    sequence_string = """
+    sequence_string = self.stabilise_accounting + """
       LoginTestVifibCustomer
       CustomerRegisterNewComputer
       Tic
@@ -111,7 +111,7 @@ class TestVifibSlapAllocationScope(TestVifibSlapWebServiceMixin):
       SelectCurrentlyUsedSalePackingListUid
       Logout
       LoginDefaultUser
-      CheckComputerPartitionInstanceSetupSalePackingListConfirmed
+      CheckComputerPartitionInstanceSetupSalePackingListDelivered
       Logout
 
       # request as someone else
@@ -141,7 +141,7 @@ class TestVifibSlapAllocationScope(TestVifibSlapWebServiceMixin):
       SelectCurrentlyUsedSalePackingListUid
       Logout
       LoginDefaultUser
-      CheckComputerPartitionInstanceSetupSalePackingListConfirmed
+      CheckComputerPartitionInstanceSetupSalePackingListDelivered
       Logout
 
       LoginERP5TypeTestCase
@@ -169,7 +169,7 @@ class TestVifibSlapAllocationScope(TestVifibSlapWebServiceMixin):
     to owner and its friends"""
     self.computer_partition_amount = 3
     sequence_list = SequenceList()
-    sequence_string = """
+    sequence_string =  self.stabilise_accounting + """
       LoginTestVifibCustomer
       CustomerRegisterNewComputer
       Tic
@@ -210,7 +210,7 @@ class TestVifibSlapAllocationScope(TestVifibSlapWebServiceMixin):
       SelectCurrentlyUsedSalePackingListUid
       Logout
       LoginDefaultUser
-      CheckComputerPartitionInstanceSetupSalePackingListConfirmed
+      CheckComputerPartitionInstanceSetupSalePackingListDelivered
       Logout
 
       # request as friend
@@ -227,7 +227,7 @@ class TestVifibSlapAllocationScope(TestVifibSlapWebServiceMixin):
       SelectCurrentlyUsedSalePackingListUid
       Logout
       LoginDefaultUser
-      CheckComputerPartitionInstanceSetupSalePackingListConfirmed
+      CheckComputerPartitionInstanceSetupSalePackingListDelivered
       Logout
 
       # request as someone else
@@ -257,7 +257,7 @@ class TestVifibSlapAllocationScope(TestVifibSlapWebServiceMixin):
       SelectCurrentlyUsedSalePackingListUid
       Logout
       LoginDefaultUser
-      CheckComputerPartitionInstanceSetupSalePackingListConfirmed
+      CheckComputerPartitionInstanceSetupSalePackingListDelivered
       Logout
 
       LoginERP5TypeTestCase
@@ -272,7 +272,7 @@ class TestVifibSlapAllocationScope(TestVifibSlapWebServiceMixin):
     to anybody"""
     self.computer_partition_amount = 2
     sequence_list = SequenceList()
-    sequence_string = """
+    sequence_string =  self.stabilise_accounting + """
       LoginTestVifibCustomer
       CustomerRegisterNewComputer
       Tic
@@ -313,7 +313,7 @@ class TestVifibSlapAllocationScope(TestVifibSlapWebServiceMixin):
       SelectCurrentlyUsedSalePackingListUid
       Logout
       LoginDefaultUser
-      CheckComputerPartitionInstanceSetupSalePackingListConfirmed
+      CheckComputerPartitionInstanceSetupSalePackingListDelivered
       Logout
 
       # request as someone else
@@ -330,7 +330,7 @@ class TestVifibSlapAllocationScope(TestVifibSlapWebServiceMixin):
       SelectCurrentlyUsedSalePackingListUid
       Logout
       LoginDefaultUser
-      CheckComputerPartitionInstanceSetupSalePackingListConfirmed
+      CheckComputerPartitionInstanceSetupSalePackingListDelivered
       Logout
 
       LoginERP5TypeTestCase
@@ -344,7 +344,7 @@ class TestVifibSlapAllocationScope(TestVifibSlapWebServiceMixin):
     """Check that computer is close it is not only available
     to anybody"""
     sequence_list = SequenceList()
-    sequence_string = """
+    sequence_string =  self.stabilise_accounting + """
       LoginTestVifibCustomer
       CustomerRegisterNewComputer
       Tic
@@ -394,7 +394,7 @@ class TestVifibSlapAllocationScope(TestVifibSlapWebServiceMixin):
   def test_allocation_scope_empty(self):
     """Check that computer's allocation scope is not set it is unavailable"""
     sequence_list = SequenceList()
-    sequence_string = """
+    sequence_string =  self.stabilise_accounting + """
       LoginTestVifibCustomer
       CustomerRegisterNewComputer
       Tic
@@ -441,7 +441,7 @@ class TestVifibSlapAllocationScope(TestVifibSlapWebServiceMixin):
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
-  prepare_open_public_computer = """
+  prepare_open_public_computer = TestVifibSlapWebServiceMixin.stabilise_accounting + """
       LoginTestVifibCustomer
       CustomerRegisterNewComputer
       Tic
@@ -487,7 +487,7 @@ class TestVifibSlapAllocationScope(TestVifibSlapWebServiceMixin):
       SelectCurrentlyUsedSalePackingListUid
       Logout
       LoginDefaultUser
-      CheckComputerPartitionInstanceSetupSalePackingListConfirmed
+      CheckComputerPartitionInstanceSetupSalePackingListDelivered
       Logout
 
       # now this computer patrition request new one
@@ -536,7 +536,7 @@ class TestVifibSlapAllocationScope(TestVifibSlapWebServiceMixin):
       SelectCurrentlyUsedSalePackingListUid
       Logout
       LoginDefaultUser
-      CheckComputerPartitionInstanceSetupSalePackingListConfirmed
+      CheckComputerPartitionInstanceSetupSalePackingListDelivered
       Logout
 
       # change allocation to personal
@@ -603,11 +603,12 @@ class TestVifibSlapAllocationScope(TestVifibSlapWebServiceMixin):
       SelectCurrentlyUsedSalePackingListUid
       Logout
       LoginDefaultUser
-      CheckComputerPartitionInstanceSetupSalePackingListConfirmed
+      CheckComputerPartitionInstanceSetupSalePackingListDelivered
       Logout
 
       StoreTestVifibAdminComputerPartitionCoordinate
 
+      """ + self.stabilise_accounting + """
       # request as someone else
       LoginTestVifibCustomerA
       PersonRequestSoftwareInstance
@@ -622,7 +623,7 @@ class TestVifibSlapAllocationScope(TestVifibSlapWebServiceMixin):
       SelectCurrentlyUsedSalePackingListUid
       Logout
       LoginDefaultUser
-      CheckComputerPartitionInstanceSetupSalePackingListConfirmed
+      CheckComputerPartitionInstanceSetupSalePackingListDelivered
       Logout
 
       # change allocation to friend
@@ -689,7 +690,7 @@ class TestVifibSlapAllocationScope(TestVifibSlapWebServiceMixin):
       SelectCurrentlyUsedSalePackingListUid
       Logout
       LoginDefaultUser
-      CheckComputerPartitionInstanceSetupSalePackingListConfirmed
+      CheckComputerPartitionInstanceSetupSalePackingListDelivered
       Logout
 
       # change allocation to close
@@ -733,7 +734,7 @@ class TestVifibSlapAllocationScope(TestVifibSlapWebServiceMixin):
       SelectCurrentlyUsedSalePackingListUid
       Logout
       LoginDefaultUser
-      CheckComputerPartitionInstanceSetupSalePackingListConfirmed
+      CheckComputerPartitionInstanceSetupSalePackingListDelivered
       Logout
 
       # change allocation to empty
@@ -759,15 +760,12 @@ class TestVifibSlapAllocationScope(TestVifibSlapWebServiceMixin):
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
-  def stepSetSequenceSoftwareInstanceStateStopped(self, sequence, **kw):
-    sequence['software_instance_state'] = 'stopped'
-
   def test_start_computer_partition_allocation_scope_close(self):
     """Check that it is possible to request stop of computer partition even
     if computer is close"""
     self.computer_partition_amount = 2
     sequence_list = SequenceList()
-    sequence_string = """
+    sequence_string = self.stabilise_accounting + """
       LoginTestVifibCustomer
       CustomerRegisterNewComputer
       Tic
@@ -775,6 +773,7 @@ class TestVifibSlapAllocationScope(TestVifibSlapWebServiceMixin):
 
       LoginDefaultUser
       SetComputerCoordinatesFromComputerTitle
+      CleanTic
       Logout
 
       LoginTestVifibCustomer
@@ -806,15 +805,17 @@ class TestVifibSlapAllocationScope(TestVifibSlapWebServiceMixin):
       LoginDefaultUser
       CallConfirmOrderedSaleOrderAlarm
       Tic
+      Tic
       SetSelectedComputerPartition
       SelectCurrentlyUsedSalePackingListUid
       Logout
       LoginDefaultUser
-      CheckComputerPartitionInstanceSetupSalePackingListConfirmed
+      CheckComputerPartitionInstanceSetupSalePackingListDelivered
       Logout
 
       # request as someone else
       LoginTestVifibAdmin
+      SetSoftwareTitleRandom
       PersonRequestSoftwareInstance
       Tic
       Logout
@@ -827,7 +828,7 @@ class TestVifibSlapAllocationScope(TestVifibSlapWebServiceMixin):
       SelectCurrentlyUsedSalePackingListUid
       Logout
       LoginDefaultUser
-      CheckComputerPartitionInstanceSetupSalePackingListConfirmed
+      CheckComputerPartitionInstanceSetupSalePackingListDelivered
       Logout
 
       # confirm instantiation
@@ -838,7 +839,7 @@ class TestVifibSlapAllocationScope(TestVifibSlapWebServiceMixin):
 
       LoginDefaultUser
       SetSelectedComputerPartition
-      CheckComputerPartitionInstanceSetupSalePackingListStopped
+      CheckComputerPartitionInstanceSetupSalePackingListDelivered
       CheckComputerPartitionNoInstanceHostingSalePackingList
       Logout
 
@@ -855,7 +856,8 @@ class TestVifibSlapAllocationScope(TestVifibSlapWebServiceMixin):
 
       # request start and check that it worked
       LoginTestVifibAdmin
-      RequestSoftwareInstanceStart
+      SetSequenceSoftwareInstanceStateStarted
+      PersonRequestSoftwareInstance
       Tic
       Logout
 

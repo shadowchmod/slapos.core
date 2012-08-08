@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 import glob
 import os
 
-version = '0.25-dev'
+version = '0.26.3-dev'
 name = 'slapos.core'
 long_description = open("README.txt").read() + "\n" + \
     open("CHANGES.txt").read() + "\n"
@@ -27,6 +27,8 @@ setup(name=name,
         ],
       keywords='slapos core',
       license='GPLv3',
+      url='http://www.slapos.org',
+      author='VIFIB',
       namespace_packages=['slapos'],
       packages=find_packages(),
       include_package_data=True,

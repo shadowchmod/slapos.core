@@ -32,7 +32,8 @@ class TestVifibSlapComputerPartitionBuilding(TestVifibSlapWebServiceMixin):
     sequence_list = SequenceList()
     sequence_string = self.prepare_building_computer_partition_sequence_string + """
       LoginTestVifibCustomer
-      RequestSoftwareInstanceDestroy
+      SetSequenceSoftwareInstanceStateDestroyed
+      PersonRequestSoftwareInstance
       Tic
       Logout
 
@@ -68,7 +69,7 @@ class TestVifibSlapComputerPartitionBuilding(TestVifibSlapWebServiceMixin):
       SlapLogout
 
       LoginDefaultUser
-      CheckComputerPartitionInstanceSetupSalePackingListStarted
+      CheckComputerPartitionInstanceSetupSalePackingListDelivered
       Logout
 
       LoginERP5TypeTestCase

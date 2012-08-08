@@ -1,13 +1,33 @@
 from Products.ERP5Type.tests.Sequence import SequenceList
 import unittest
 from testVifibSlapWebService import TestVifibSlapWebServiceMixin
-from Products.DCWorkflow.DCWorkflow import ValidationFailed
 from random import random
+from Products.ERP5Type.tests.backportUnittest import skip
+from Products.ERP5Type.Errors import UnsupportedWorkflowMethod
 
 class TestVifibSlapComputerPartitionUpdate(TestVifibSlapWebServiceMixin):
   def stepRequestSoftwareInstanceUpdate(self, sequence, **kw):
-    self.portal.portal_catalog.getResultValue(
-        uid=sequence['software_instance_uid']).requestUpdateComputerPartition()
+    instance = self.portal.portal_catalog.getResultValue(
+        uid=sequence['software_instance_uid'])
+    if instance.getPortalType() == "Software Instance":
+      shared = False
+    elif instance.getPortalType() == "Slave Instance":
+      shared = True
+    else:
+      raise NotImplementedError
+    method_dict = {
+        'start_requested': instance.requestStart,
+        'stop_requested': instance.requestStop,
+        'destroy_requested': instance.requestDestroy,
+        }
+    method_dict[instance.getSlapState()](
+        software_release=instance.getRootSoftwareReleaseUrl(),
+        instance_xml='<?xml version="1.0" ' \
+                     'encoding="utf-8"?><instance><parameter id="foo">bar</parameter></instance>',
+        software_type=instance.getSourceReference(),
+        sla_xml=instance.getSlaXml(),
+        shared=shared,
+        )
 
   def stepCheckComputerPartitionInstanceUpdateSalePackingListDelivered(self,
       sequence, **kw):
@@ -51,7 +71,7 @@ class TestVifibSlapComputerPartitionUpdate(TestVifibSlapWebServiceMixin):
       SelectCurrentlyUsedSalePackingListUid
       Logout
       LoginDefaultUser
-      CheckComputerPartitionInstanceSetupSalePackingListConfirmed
+      CheckComputerPartitionInstanceSetupSalePackingListDelivered
       Logout
 
       SlapLoginCurrentComputer
@@ -59,7 +79,7 @@ class TestVifibSlapComputerPartitionUpdate(TestVifibSlapWebServiceMixin):
       Tic
       SlapLogout
       LoginDefaultUser
-      CheckComputerPartitionInstanceSetupSalePackingListStarted
+      CheckComputerPartitionInstanceSetupSalePackingListDelivered
       Logout
 
       SlapLoginCurrentComputer
@@ -68,14 +88,14 @@ class TestVifibSlapComputerPartitionUpdate(TestVifibSlapWebServiceMixin):
       SlapLogout
       LoginDefaultUser
       SetSelectedComputerPartition
-      CheckComputerPartitionInstanceSetupSalePackingListStopped
+      CheckComputerPartitionInstanceSetupSalePackingListDelivered
       CheckComputerPartitionNoInstanceHostingSalePackingList
       Logout
 
       # prepared initally stopped instance
 
       SlapLoginCurrentComputer
-      CheckEmptyComputerGetComputerPartitionCall
+      CheckSuccessComputerGetComputerPartitionCall
       SlapLogout
 
       LoginTestVifibCustomer
@@ -84,7 +104,7 @@ class TestVifibSlapComputerPartitionUpdate(TestVifibSlapWebServiceMixin):
       Logout
 
       LoginDefaultUser
-      CheckComputerPartitionInstanceUpdateSalePackingListConfirmed
+      CheckComputerPartitionInstanceUpdateSalePackingListDelivered
       Logout
 
       SlapLoginCurrentComputer
@@ -102,12 +122,12 @@ class TestVifibSlapComputerPartitionUpdate(TestVifibSlapWebServiceMixin):
 
       LoginDefaultUser
       CheckComputerPartitionNoInstanceHostingSalePackingList
-      CheckComputerPartitionInstanceSetupSalePackingListStopped
+      CheckComputerPartitionInstanceSetupSalePackingListDelivered
       CheckComputerPartitionInstanceUpdateSalePackingListDelivered
       Logout
 
       SlapLoginCurrentComputer
-      CheckEmptyComputerGetComputerPartitionCall
+      CheckSuccessComputerGetComputerPartitionCall
       SlapLogout
 
       LoginERP5TypeTestCase
@@ -122,7 +142,7 @@ class TestVifibSlapComputerPartitionUpdate(TestVifibSlapWebServiceMixin):
     sequence_string = self.prepare_started_computer_partition_sequence_string \
       + """
         SlapLoginCurrentComputer
-        CheckEmptyComputerGetComputerPartitionCall
+        CheckSuccessComputerGetComputerPartitionCall
         SlapLogout
 
         LoginTestVifibCustomer
@@ -131,7 +151,7 @@ class TestVifibSlapComputerPartitionUpdate(TestVifibSlapWebServiceMixin):
         Logout
 
         LoginDefaultUser
-        CheckComputerPartitionInstanceUpdateSalePackingListConfirmed
+        CheckComputerPartitionInstanceUpdateSalePackingListDelivered
         Logout
 
         SlapLoginCurrentComputer
@@ -153,7 +173,7 @@ class TestVifibSlapComputerPartitionUpdate(TestVifibSlapWebServiceMixin):
         Logout
 
         SlapLoginCurrentComputer
-        CheckEmptyComputerGetComputerPartitionCall
+        CheckSuccessComputerGetComputerPartitionCall
         SlapLogout
 
         LoginERP5TypeTestCase
@@ -168,7 +188,7 @@ class TestVifibSlapComputerPartitionUpdate(TestVifibSlapWebServiceMixin):
     sequence_string = self.prepare_stopped_computer_partition_sequence_string \
       + """
         SlapLoginCurrentComputer
-        CheckEmptyComputerGetComputerPartitionCall
+        CheckSuccessComputerGetComputerPartitionCall
         SlapLogout
 
         LoginTestVifibCustomer
@@ -177,7 +197,7 @@ class TestVifibSlapComputerPartitionUpdate(TestVifibSlapWebServiceMixin):
         Logout
 
         LoginDefaultUser
-        CheckComputerPartitionInstanceUpdateSalePackingListConfirmed
+        CheckComputerPartitionInstanceUpdateSalePackingListDelivered
         Logout
 
         SlapLoginCurrentComputer
@@ -194,12 +214,12 @@ class TestVifibSlapComputerPartitionUpdate(TestVifibSlapWebServiceMixin):
         SlapLogout
 
         LoginDefaultUser
-        CheckComputerPartitionInstanceHostingSalePackingListDelivered
+        CheckComputerPartitionInstanceHostingSalePackingListStopped
         CheckComputerPartitionInstanceUpdateSalePackingListDelivered
         Logout
 
         SlapLoginCurrentComputer
-        CheckEmptyComputerGetComputerPartitionCall
+        CheckSuccessComputerGetComputerPartitionCall
         SlapLogout
 
         LoginERP5TypeTestCase
@@ -228,7 +248,7 @@ class TestVifibSlapComputerPartitionUpdate(TestVifibSlapWebServiceMixin):
     sequence_string = self.prepare_stopped_computer_partition_sequence_string \
       + """
         SlapLoginCurrentComputer
-        CheckEmptyComputerGetComputerPartitionCall
+        CheckSuccessComputerGetComputerPartitionCall
         SlapLogout
 
         LoginTestVifibCustomer
@@ -237,7 +257,7 @@ class TestVifibSlapComputerPartitionUpdate(TestVifibSlapWebServiceMixin):
         Logout
 
         LoginDefaultUser
-        CheckComputerPartitionInstanceUpdateSalePackingListConfirmed
+        CheckComputerPartitionInstanceUpdateSalePackingListDelivered
         Logout
 
         SlapLoginCurrentComputer
@@ -254,8 +274,8 @@ class TestVifibSlapComputerPartitionUpdate(TestVifibSlapWebServiceMixin):
         SlapLogout
 
         LoginDefaultUser
-        CheckComputerPartitionInstanceHostingSalePackingListDelivered
-        CheckComputerPartitionInstanceUpdateSalePackingListConfirmed
+        CheckComputerPartitionInstanceHostingSalePackingListStopped
+        CheckComputerPartitionInstanceUpdateSalePackingListDelivered
         CheckUpdateSalePackingListErrorText
         Logout
 
@@ -277,7 +297,7 @@ class TestVifibSlapComputerPartitionUpdate(TestVifibSlapWebServiceMixin):
         Logout
 
         LoginDefaultUser
-        CheckComputerPartitionNoInstanceUpdateSalePackingList
+        CheckComputerPartitionInstanceUpdateSalePackingListDelivered
         Logout
 
         LoginERP5TypeTestCase
@@ -297,85 +317,13 @@ class TestVifibSlapComputerPartitionUpdate(TestVifibSlapWebServiceMixin):
         Logout
 
         LoginDefaultUser
-        CheckComputerPartitionNoInstanceUpdateSalePackingList
+        CheckComputerPartitionInstanceUpdateSalePackingListDelivered
         Logout
 
         LoginERP5TypeTestCase
         CheckSiteConsistency
         Logout
       """
-    sequence_list.addSequenceString(sequence_string)
-    sequence_list.play(self)
-
-  def test_update_not_created_delivered_instance_setup(self):
-    sequence_list = SequenceList()
-    sequence_string = self.prepare_published_software_release + \
-      self.prepare_formated_computer + """
-      LoginTestVifibAdmin
-      RequestSoftwareInstallation
-      Tic
-      Logout
-
-      SlapLoginCurrentComputer
-      ComputerSoftwareReleaseAvailable
-      Tic
-      SlapLogout
-
-      LoginTestVifibCustomer
-      PersonRequestStoppedSoftwareInstance
-      Tic
-      Logout
-
-      LoginDefaultUser
-      CallConfirmOrderedSaleOrderAlarm
-      Tic
-      SetSelectedComputerPartition
-      SelectCurrentlyUsedSalePackingListUid
-      Logout
-      LoginDefaultUser
-      CheckComputerPartitionInstanceSetupSalePackingListConfirmed
-      Logout
-
-      SlapLoginCurrentComputer
-      SoftwareInstanceBuilding
-      Tic
-      SlapLogout
-      LoginDefaultUser
-      CheckComputerPartitionInstanceSetupSalePackingListStarted
-      Logout
-
-      SlapLoginCurrentComputer
-      SoftwareInstanceAvailable
-      Tic
-      SlapLogout
-      LoginDefaultUser
-      SetSelectedComputerPartition
-      CheckComputerPartitionInstanceSetupSalePackingListStopped
-      CheckComputerPartitionNoInstanceHostingSalePackingList
-      Logout
-
-
-      LoginDefaultUser
-      DeliverSalePackingList
-      Tic
-      CheckComputerPartitionInstanceSetupSalePackingListDelivered
-      Logout
-
-      # prepared delivered instance setup delivery
-
-      LoginTestVifibCustomer
-      RequestSoftwareInstanceUpdateRaisesValidationFailed
-      Tic
-      Logout
-
-      LoginDefaultUser
-      CheckComputerPartitionNoInstanceUpdateSalePackingList
-      Logout
-
-      LoginERP5TypeTestCase
-      CheckSiteConsistency
-      Logout
-    """
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
@@ -389,7 +337,7 @@ class TestVifibSlapComputerPartitionUpdate(TestVifibSlapWebServiceMixin):
         Logout
 
         LoginDefaultUser
-        CheckComputerPartitionNoInstanceUpdateSalePackingList
+        CheckComputerPartitionInstanceUpdateSalePackingListDelivered
         Logout
 
         LoginERP5TypeTestCase
@@ -409,7 +357,7 @@ class TestVifibSlapComputerPartitionUpdate(TestVifibSlapWebServiceMixin):
         Logout
 
         LoginDefaultUser
-        CheckComputerPartitionNoInstanceUpdateSalePackingList
+        CheckComputerPartitionInstanceUpdateSalePackingListDelivered
         Logout
 
         LoginERP5TypeTestCase
@@ -419,6 +367,7 @@ class TestVifibSlapComputerPartitionUpdate(TestVifibSlapWebServiceMixin):
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
+  @skip('Update is forbidden on destroyed instance')
   def test_update_not_created_confirmed_instance_cleanup(self):
     sequence_list = SequenceList()
     sequence_string = \
@@ -439,6 +388,7 @@ class TestVifibSlapComputerPartitionUpdate(TestVifibSlapWebServiceMixin):
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
+  @skip('Update is forbidden on destroyed instance')
   def test_update_not_created_started_instance_cleanup(self):
     sequence_list = SequenceList()
     sequence_string = \
@@ -463,7 +413,25 @@ class TestVifibSlapComputerPartitionUpdate(TestVifibSlapWebServiceMixin):
     **kw):
     instance = self.portal.portal_catalog.getResultValue(
         uid=sequence['software_instance_uid'])
-    self.assertRaises(ValidationFailed, instance.requestUpdateComputerPartition)
+    if instance.getPortalType() == "Software Instance":
+      shared = False
+    elif instance.getPortalType() == "Slave Instance":
+      shared = True
+    else:
+      raise NotImplementedError
+    method_dict = {
+        'start_requested': instance.requestStart,
+        'stop_requested': instance.requestStop,
+        'destroy_requested': instance.requestDestroy,
+        }
+    self.assertRaises(UnsupportedWorkflowMethod, 
+        method_dict[instance.getSlapState()],
+        software_release=instance.getRootSoftwareReleaseUrl(),
+        instance_xml=instance.getTextContent(),
+        software_type=instance.getSourceReference(),
+        sla_xml=instance.getSlaXml(),
+        shared=shared,
+        )
 
   def test_update_not_possible_delivered_instance_cleanup(self):
     sequence_list = SequenceList()
@@ -481,111 +449,6 @@ class TestVifibSlapComputerPartitionUpdate(TestVifibSlapWebServiceMixin):
         LoginERP5TypeTestCase
         CheckSiteConsistency
         Logout
-      """
-    sequence_list.addSequenceString(sequence_string)
-    sequence_list.play(self)
-
-  # low level activity locks
-  def stepCheckActivityStartInProgress(self, sequence, **kw):
-    self.assertNotEqual(0, self.portal.portal_activities.
-      countMessageWithTag('%s_startInProgress' % sequence[
-        'software_instance_uid']))
-
-  def test_update_not_created_start_in_progress(self):
-    sequence_list = SequenceList()
-    sequence_string = \
-      self.prepare_stopped_computer_partition_sequence_string + """
-      LoginTestVifibCustomer
-      RequestSoftwareInstanceStart
-      Logout
-
-      LoginDefaultUser
-      CheckActivityStartInProgress
-      Logout
-
-      LoginTestVifibCustomer
-      RequestSoftwareInstanceUpdate
-      Tic
-      Logout
-
-      LoginDefaultUser
-      CheckComputerPartitionNoInstanceUpdateSalePackingList
-      Logout
-
-      LoginERP5TypeTestCase
-      CheckSiteConsistency
-      Logout
-      """
-    sequence_list.addSequenceString(sequence_string)
-    sequence_list.play(self)
-
-  def stepCheckActivityDestroyInProgress(self, sequence, **kw):
-    self.assertNotEqual(0, self.portal.portal_activities.
-      countMessageWithTag('%s_destroyInProgress' % sequence[
-        'software_instance_uid']))
-
-  def test_update_not_created_destruction_in_progress(self):
-    sequence_list = SequenceList()
-    sequence_string = self\
-        .prepare_installed_computer_partition_sequence_string + """
-      LoginTestVifibCustomer
-      RequestSoftwareInstanceDestroy
-      Logout
-
-      LoginDefaultUser
-      CheckActivityDestroyInProgress
-      Logout
-
-      LoginTestVifibCustomer
-      RequestSoftwareInstanceUpdate
-      Tic
-      Logout
-
-      LoginDefaultUser
-      CheckComputerPartitionNoInstanceUpdateSalePackingList
-      Logout
-
-      LoginERP5TypeTestCase
-      CheckSiteConsistency
-      Logout
-      """
-    sequence_list.addSequenceString(sequence_string)
-    sequence_list.play(self)
-
-  def stepCheckActivityRequestInProgress(self, sequence, **kw):
-    hosting_subscription_uid = sequence['hosting_subscription_uid']
-    requested_partition_reference = sequence.get('software_type', 'requested_reference')
-    tag = "%s_%s_inProgress" % (hosting_subscription_uid,
-        requested_partition_reference)
-
-    self.assertNotEqual(0, self.portal.portal_activities.
-      countMessageWithTag(tag))
-
-  def test_update_not_created_request_in_progress(self):
-    self.computer_partition_amount = 2
-    sequence_list = SequenceList()
-    sequence_string = self\
-        .prepare_install_requested_computer_partition_sequence_string + """
-      SlapLoginCurrentSoftwareInstance
-      RequestComputerPartitionNoTic
-      SlapLogout
-
-      LoginDefaultUser
-      CheckActivityRequestInProgress
-      Logout
-
-      LoginTestVifibCustomer
-      RequestSoftwareInstanceUpdate
-      Tic
-      Logout
-
-      LoginDefaultUser
-      CheckComputerPartitionNoInstanceUpdateSalePackingList
-      Logout
-
-      LoginERP5TypeTestCase
-      CheckSiteConsistency
-      Logout
       """
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
@@ -608,8 +471,11 @@ class TestVifibSlapComputerPartitionUpdate(TestVifibSlapWebServiceMixin):
     person.requestSoftwareInstance(
       software_release=software_release.getUrlString(),
       software_title=software_title,
+      software_type="RootSoftwareInstance",
       instance_xml=self.minimal_correct_xml,
-      **kw)
+      sla_xml="",
+      shared=False,
+      state="started")
     sequence.edit(root_software_instance_title=software_title)
 
   def test_update_not_created_person_request_in_progress(self):
@@ -642,158 +508,6 @@ class TestVifibSlapComputerPartitionUpdate(TestVifibSlapWebServiceMixin):
       LoginERP5TypeTestCase
       CheckSiteConsistency
       Logout
-      """
-    sequence_list.addSequenceString(sequence_string)
-    sequence_list.play(self)
-
-  # update triggers
-  def stepSoftwareInstanceEditTitle(self, sequence,
-    **kw):
-    instance = self.portal.portal_catalog.getResultValue(
-        uid=sequence['software_instance_uid'])
-    instance.edit(
-      title = instance.getTitle() + 'edited'
-    )
-
-  def stepSoftwareInstanceEditSourceReference(self, sequence,
-    **kw):
-    instance = self.portal.portal_catalog.getResultValue(
-        uid=sequence['software_instance_uid'])
-    instance.edit(
-      source_reference = instance.getSourceReference() + 'edited'
-    )
-
-  def stepSoftwareInstanceEditTextContent(self, sequence,
-    **kw):
-    instance = self.portal.portal_catalog.getResultValue(
-        uid=sequence['software_instance_uid'])
-    text_content = instance.getTextContent()
-    modified_xml = """<?xml version="1.0" encoding="utf-8"?>
-      <instance><parameter id="ignore">value</parameter></instance>"""
-    self.assertNotEqual(modified_xml, text_content)
-    instance.edit(
-      text_content = modified_xml
-    )
-
-  def stepSoftwareInstanceEditConnectionXml(self, sequence,
-    **kw):
-    instance = self.portal.portal_catalog.getResultValue(
-        uid=sequence['software_instance_uid'])
-    connection_xml = instance.getConnectionXml()
-    self.assertNotEqual(connection_xml, self.minimal_correct_xml)
-    instance.edit(
-      connection_xml = self.minimal_correct_xml
-    )
-
-  def test_update_on_title_change(self):
-    sequence_list = SequenceList()
-    sequence_string = \
-      self.prepare_started_computer_partition_sequence_string + """
-        SlapLoginCurrentComputer
-        CheckEmptyComputerGetComputerPartitionCall
-        SlapLogout
-
-        LoginTestVifibCustomer
-        SoftwareInstanceEditTitle
-        Tic
-        Logout
-
-        LoginDefaultUser
-        CheckComputerPartitionInstanceUpdateSalePackingListConfirmed
-        Logout
-
-        SlapLoginCurrentComputer
-        CheckSuccessComputerGetComputerPartitionCall
-        SlapLogout
-
-
-        LoginERP5TypeTestCase
-        CheckSiteConsistency
-        Logout
-      """
-    sequence_list.addSequenceString(sequence_string)
-    sequence_list.play(self)
-
-  def test_update_on_source_reference_change(self):
-    sequence_list = SequenceList()
-    sequence_string = \
-      self.prepare_started_computer_partition_sequence_string + """
-        SlapLoginCurrentComputer
-        CheckEmptyComputerGetComputerPartitionCall
-        SlapLogout
-
-        LoginTestVifibCustomer
-        SoftwareInstanceEditSourceReference
-        Tic
-        Logout
-
-        LoginDefaultUser
-        CheckComputerPartitionInstanceUpdateSalePackingListConfirmed
-        Logout
-
-        SlapLoginCurrentComputer
-        CheckSuccessComputerGetComputerPartitionCall
-        SlapLogout
-
-        LoginERP5TypeTestCase
-        CheckSiteConsistency
-        Logout
-      """
-    sequence_list.addSequenceString(sequence_string)
-    sequence_list.play(self)
-
-  def test_update_on_text_content_change(self):
-    sequence_list = SequenceList()
-    sequence_string = \
-      self.prepare_started_computer_partition_sequence_string + """
-        SlapLoginCurrentComputer
-        CheckEmptyComputerGetComputerPartitionCall
-        SlapLogout
-
-        LoginTestVifibCustomer
-        SoftwareInstanceEditTextContent
-        Tic
-        Logout
-
-        LoginDefaultUser
-        CheckComputerPartitionInstanceUpdateSalePackingListConfirmed
-        Logout
-
-        SlapLoginCurrentComputer
-        CheckSuccessComputerGetComputerPartitionCall
-        SlapLogout
-
-        LoginERP5TypeTestCase
-        CheckSiteConsistency
-        Logout
-      """
-    sequence_list.addSequenceString(sequence_string)
-    sequence_list.play(self)
-
-  def test_no_update_on_connection_xml_change(self):
-    sequence_list = SequenceList()
-    sequence_string = \
-      self.prepare_started_computer_partition_sequence_string + """
-        SlapLoginCurrentComputer
-        CheckEmptyComputerGetComputerPartitionCall
-        SlapLogout
-
-        LoginTestVifibCustomer
-        SoftwareInstanceEditConnectionXml
-        Tic
-        Logout
-
-        LoginDefaultUser
-        CheckComputerPartitionNoInstanceUpdateSalePackingList
-        Logout
-
-        SlapLoginCurrentComputer
-        CheckEmptyComputerGetComputerPartitionCall
-        SlapLogout
-
-        LoginERP5TypeTestCase
-        CheckSiteConsistency
-        Logout
       """
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)

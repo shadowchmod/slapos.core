@@ -5,22 +5,27 @@ master_url = https://slap.vifib.com/
 # Replace computer_id by the unique identifier of your computer on vifib.net,
 # starting by COMP-
 computer_id = COMP-12345
-key_file = /etc/opt/slapos/key
-cert_file = /etc/opt/slapos/certificate
-certificate_repository_path = /etc/opt/slapos/pki/
+key_file = /etc/opt/slapos/ssl/computer.key
+cert_file =  /etc/opt/slapos/ssl/computer.crt
+certificate_repository_path = /etc/opt/slapos/ssl/partition_pki
 
 [slapformat]
 # Replace by your network interface like eth0, eth1, slapbr0...
 interface_name = interfacename
+create_tap = false
+partition_amount = 10
 computer_xml = /opt/slapos/slapos.xml
 log_file = /opt/slapos/slapformat.log
-partition_amount = 20
 partition_base_name = slappart
 user_base_name = slapuser
 tap_base_name = slaptap
 # You can choose any other local network which does not conflict with your
 # current machine configuration
 ipv4_local_network = 10.0.0.0/16
+# Uncomment and change this if you are using an IPv6 tunnel (like VPN, gogoc,
+# tunnelbroker.net)
+# ipv6_interface = tapVPN
+
 
 [networkcache]
 # Define options for binary cache, used to download already compiled software.
@@ -127,3 +132,9 @@ signature-certificate-list =
   Loe5mIHsjRVKvzB6SvIaFUYq/EzmHnqNdpIGkT/Mj7r/iUs61btTcGUCLsUiUeci
   Vd0Ozh79JSRpkrdI8R/NRQ2XPHAo+29TT70=
   -----END CERTIFICATE-----
+# List of URL(s) which shouldn't be installed from binary cache, separated by
+# commas. Any URL beginning by a blacklisted URL will be blacklisted as well.
+binary-cache-url-blacklist =
+  http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD
+  http://git.erp5.org/gitweb/slapos.core.git/blob_plain/refs/heads
+

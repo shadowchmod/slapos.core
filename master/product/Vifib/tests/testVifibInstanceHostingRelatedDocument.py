@@ -23,7 +23,7 @@ class TestVifibInstanceHostingRelatedDocument(TestVifibSlapWebServiceMixin):
       resource=self.portal.portal_preferences\
         .getPreferredInstanceSetupResource()).getParentValue()
 
-    self.assertEqual('stopped', instance_setup_delivery.getSimulationState())
+    self.assertEqual('delivered', instance_setup_delivery.getSimulationState())
     start_date = None
     for item in self.portal.portal_workflow.getInfoFor(
       ob=instance_setup_delivery, name='history', wf_id='packing_list_workflow'):
@@ -113,13 +113,13 @@ class TestVifibInstanceHostingRelatedDocument(TestVifibSlapWebServiceMixin):
       resource_relative_url=hosting_resource)
     self.assertEqual(0, len(hosting_invoice_line_list))
 
-    # setup is stopped, and has there is invoice
+    # setup is delivered, and has there is invoice
     setup_delivery_line_list = catalog(portal_type='Sale Packing List Line',
       aggregate_relative_url=hosting_subscription_url,
       resource_relative_url=setup_resource)
 
     self.assertEqual(1, len(setup_delivery_line_list))
-    self.assertEqual('stopped', setup_delivery_line_list[0]\
+    self.assertEqual('delivered', setup_delivery_line_list[0]\
       .getSimulationState())
 
     setup_invoice_line_list = catalog(portal_type='Invoice Line',
@@ -191,13 +191,13 @@ class TestVifibInstanceHostingRelatedDocument(TestVifibSlapWebServiceMixin):
       resource_relative_url=sequence['hosting_resource'])
     self.assertEqual(0, len(hosting_invoice_line_list))
 
-    # setup is stopped, and has there is invoice
+    # setup is delivered, and has there is invoice
     setup_delivery_line_list = catalog(portal_type='Sale Packing List Line',
       aggregate_relative_url=hosting_subscription_url,
       resource_relative_url=sequence['setup_resource'])
 
     self.assertEqual(1, len(setup_delivery_line_list))
-    self.assertEqual('stopped', setup_delivery_line_list[0]\
+    self.assertEqual('delivered', setup_delivery_line_list[0]\
       .getSimulationState())
 
     setup_invoice_line_list = catalog(portal_type='Invoice Line',
@@ -273,13 +273,13 @@ class TestVifibInstanceHostingRelatedDocument(TestVifibSlapWebServiceMixin):
       resource_relative_url=sequence['hosting_resource'])
     self.assertEqual(0, len(hosting_invoice_line_list))
 
-    # setup is stopped, and has there is invoice
+    # setup is delivered, and has there is invoice
     setup_delivery_line_list = catalog(portal_type='Sale Packing List Line',
       aggregate_relative_url=hosting_subscription_url,
       resource_relative_url=sequence['setup_resource'])
 
     self.assertEqual(1, len(setup_delivery_line_list))
-    self.assertEqual('stopped', setup_delivery_line_list[0]\
+    self.assertEqual('delivered', setup_delivery_line_list[0]\
       .getSimulationState())
 
     setup_invoice_line_list = catalog(portal_type='Invoice Line',
@@ -372,13 +372,13 @@ class TestVifibInstanceHostingRelatedDocument(TestVifibSlapWebServiceMixin):
       resource_relative_url=sequence['hosting_resource'])
     self.assertEqual(0, len(hosting_invoice_line_list))
 
-    # setup is stopped, and has there is invoice
+    # setup is delivered, and has there is invoice
     setup_delivery_line_list = catalog(portal_type='Sale Packing List Line',
       aggregate_relative_url=hosting_subscription_url,
       resource_relative_url=sequence['setup_resource'])
 
     self.assertEqual(1, len(setup_delivery_line_list))
-    self.assertEqual('stopped', setup_delivery_line_list[0]\
+    self.assertEqual('delivered', setup_delivery_line_list[0]\
       .getSimulationState())
 
     setup_invoice_line_list = catalog(portal_type='Invoice Line',
@@ -479,13 +479,13 @@ class TestVifibInstanceHostingRelatedDocument(TestVifibSlapWebServiceMixin):
       resource_relative_url=sequence['hosting_resource'])
     self.assertEqual(0, len(hosting_invoice_line_list))
 
-    # setup is stopped, and has there is invoice
+    # setup is delivered, and has there is invoice
     setup_delivery_line_list = catalog(portal_type='Sale Packing List Line',
       aggregate_relative_url=hosting_subscription_url,
       resource_relative_url=sequence['setup_resource'])
 
     self.assertEqual(1, len(setup_delivery_line_list))
-    self.assertEqual('stopped', setup_delivery_line_list[0]\
+    self.assertEqual('delivered', setup_delivery_line_list[0]\
       .getSimulationState())
 
     setup_invoice_line_list = catalog(portal_type='Invoice Line',
@@ -516,7 +516,8 @@ class TestVifibInstanceHostingRelatedDocument(TestVifibSlapWebServiceMixin):
     # there are three invoice lines, where two share same invoice
     # and other is on other one
     first_invoice = setup_invoice_line_list[0].getParentValue()
-    second_invoice = [q.getParentValue() for q in subscription_invoice_line_list \
+    second_invoice = [q.getParentValue() for q in \
+      subscription_invoice_line_list \
       if q.getParentValue().getUid() != first_invoice.getUid()][0]
 
     # invoices shall be solved
@@ -573,6 +574,9 @@ class TestVifibInstanceHostingRelatedDocument(TestVifibSlapWebServiceMixin):
 
         CallVifibTriggerBuildAlarm
         Tic
+        CallVifibUpdateDeliveryCausalityStateAlarm
+        CleanTic
+
         # Nothing shall change
         CheckHostingSubscriptionInitialDocumentCoverage
 
@@ -594,18 +598,18 @@ class TestVifibInstanceHostingRelatedDocument(TestVifibSlapWebServiceMixin):
         Tic
         CheckHostingSubscriptionStoppedDocumentCoverage
 
-        # Confirm current invoice and stop next delivery. After triggering build
-        # new planned invoice shall be available.
-
-        SelectPlannedInvoice
-        ConfirmInvoice
-        Tic
-
         LoginERP5TypeTestCase
         CheckSiteConsistency
         Logout
         """
 
+#        # Confirm current invoice and stop next delivery. After triggering build
+#        # new planned invoice shall be available.
+#
+#        SelectPlannedInvoice
+#        ConfirmInvoice
+#        Tic
+#
 #         SelectNextSubscriptionDelivery
 #         Tic
 # 

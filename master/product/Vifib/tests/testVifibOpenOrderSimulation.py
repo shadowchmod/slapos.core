@@ -35,11 +35,11 @@ class TestVifibOpenOrderSimulation(TestVifibSlapWebServiceMixin):
       resource=self.portal.portal_preferences\
         .getPreferredInstanceSetupResource()).getParentValue()
 
-    self.assertEqual('stopped', instance_setup_delivery.getSimulationState())
+    self.assertEqual('delivered', instance_setup_delivery.getSimulationState())
     start_date = None
     for item in self.portal.portal_workflow.getInfoFor(
       ob=instance_setup_delivery, name='history', wf_id='packing_list_workflow'):
-      if item.get('simulation_state') == 'stopped':
+      if item.get('simulation_state') == 'delivered':
         start_date = item.get('time')
         break
 
@@ -127,8 +127,8 @@ class TestVifibOpenOrderSimulation(TestVifibSlapWebServiceMixin):
       # ...so no buildable
       self.assertFalse(simulation_movement.isBuildable())
 
-      # stopped...
-      self.assertEqual('stopped', simulation_movement.getSimulationState())
+      # delivered...
+      self.assertEqual('delivered', simulation_movement.getSimulationState())
       # ...so invoice rule applied
       self.assertEqual(1,
         len(simulation_movement.contentValues(portal_type="Applied Rule")))
@@ -150,11 +150,10 @@ class TestVifibOpenOrderSimulation(TestVifibSlapWebServiceMixin):
   def stepCheckThreeTopLevelSimulationMovement(self, sequence, **kw):
     hosting_subscription = self.portal.portal_catalog.getResultValue(
       uid=sequence['hosting_subscription_uid'])
-    # 3 open order lines:
-    #  * one without dates
+    # 2 open order lines:
     #  * one with start date and stop date
     #  * one with stop date extended by test
-    self.assertEqual(3, self.portal.portal_catalog.countResults(
+    self.assertEqual(2, self.portal.portal_catalog.countResults(
       default_aggregate_uid=sequence['hosting_subscription_uid'],
       portal_type='Open Sale Order Line')[0][0]
     )
@@ -182,9 +181,19 @@ class TestVifibOpenOrderSimulation(TestVifibSlapWebServiceMixin):
     sequence_string = \
         self.prepare_installed_computer_partition_sequence_string + """
       LoginERP5TypeTestCase
-      Tic # in order to update simulation
+
+      CallVifibTriggerBuildAlarm
+      CleanTic
+      CallVifibUpdateDeliveryCausalityStateAlarm
+      CleanTic
+      CallDeliverSubscriptionSalePackingListAlarm
+      CleanTic
+      CallVifibExpandDeliveryLineAlarm
+      CleanTic
+      CallDeliverSubscriptionSalePackingListAlarm
+      CleanTic
+
       CheckSimulationMovement
-      Tic
       SlapLogout
 
       LoginERP5TypeTestCase
@@ -194,7 +203,8 @@ class TestVifibOpenOrderSimulation(TestVifibSlapWebServiceMixin):
       Logout
 
       LoginTestVifibCustomer
-      RequestSoftwareInstanceDestroy
+      SetSequenceSoftwareInstanceStateDestroyed
+      PersonRequestSoftwareInstance
       Tic
       Logout
 

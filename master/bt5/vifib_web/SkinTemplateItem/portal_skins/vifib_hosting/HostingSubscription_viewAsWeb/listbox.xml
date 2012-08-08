@@ -114,10 +114,6 @@
                     <value>
                       <list>
                         <tuple>
-                          <string>action_button</string>
-                          <string>Action</string>
-                        </tuple>
-                        <tuple>
                           <string>image</string>
                           <string>image</string>
                         </tuple>
@@ -163,16 +159,12 @@
                     <value>
                       <list>
                         <tuple>
-                          <string>start_button</string>
-                          <string>SoftwareInstance_getStartUrl</string>
+                          <string>title</string>
+                          <string>Base_getNonEditableAbsoluteUrl</string>
                         </tuple>
                         <tuple>
-                          <string>stop_button</string>
-                          <string>SoftwareInstance_getStopUrl</string>
-                        </tuple>
-                        <tuple>
-                          <string>destroy_button</string>
-                          <string>SoftwareInstance_getDestroyUrl</string>
+                          <string>status</string>
+                          <string>Base_getNonEditableAbsoluteUrl</string>
                         </tuple>
                       </list>
                     </value>

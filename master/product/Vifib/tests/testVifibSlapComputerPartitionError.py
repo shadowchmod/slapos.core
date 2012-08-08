@@ -29,6 +29,7 @@ class TestVifibSlapComputerPartitionError(TestVifibSlapWebServiceMixin):
       Tic \
       SlapLoginCurrentComputer \
       CheckNotFoundComputerPartitionErrorAfterRegisterCall \
+      CleanTic \
       SlapLogout \
       LoginERP5TypeTestCase \
       CheckSiteConsistency \
@@ -140,8 +141,6 @@ class TestVifibSlapComputerPartitionError(TestVifibSlapWebServiceMixin):
     sequence_list = SequenceList()
     sequence_string = self.prepare_installed_computer_partition_sequence_string + '\
       LoginDefaultUser \
-      DeliverSalePackingList \
-      Tic \
       CheckComputerPartitionInstanceSetupSalePackingListDelivered \
       Logout \
       \
@@ -312,10 +311,12 @@ class TestVifibSlapComputerPartitionError(TestVifibSlapWebServiceMixin):
       Logout \
       SlapLoginCurrentComputer \
       CheckSoftwareReleaseErrorCall \
+      CleanTic \
       SlapLogout \
       LoginDefaultUser \
       SelectCurrentlyUsedSalePackingListUid \
       CheckSalePackingListErrorText \
+      CleanTic \
       Logout \
       LoginERP5TypeTestCase \
       CheckSiteConsistency \
@@ -337,6 +338,7 @@ class TestVifibSlapComputerPartitionError(TestVifibSlapWebServiceMixin):
       Logout \
       SlapLoginCurrentComputer \
       CheckSuccessComputerPartitionErrorCall \
+      CleanTic \
       SlapLogout \
       LoginDefaultUser \
       CheckSalePackingListErrorText \
@@ -358,11 +360,13 @@ class TestVifibSlapComputerPartitionError(TestVifibSlapWebServiceMixin):
     sequence_string = self.prepare_confirmed_cleanup_resource_packing_list + '\
       LoginDefaultUser \
       StartSalePackingList \
+      CleanTic \
       StopSalePackingList \
       Tic \
       Logout \
       SlapLoginCurrentComputer \
       CheckSuccessComputerPartitionErrorCall \
+      CleanTic \
       SlapLogout \
       LoginDefaultUser \
       CheckSalePackingListErrorText \
@@ -384,15 +388,18 @@ class TestVifibSlapComputerPartitionError(TestVifibSlapWebServiceMixin):
     sequence_string = self.prepare_confirmed_cleanup_resource_packing_list + '\
       LoginDefaultUser \
       StartSalePackingList \
+      CleanTic \
       StopSalePackingList \
+      CleanTic \
       DeliverSalePackingList \
       Tic \
       Logout \
       SlapLoginCurrentComputer \
-      CheckNotFoundComputerPartitionErrorCall \
+      CheckSuccessComputerPartitionErrorCall \
+      CleanTic \
       SlapLogout \
       LoginDefaultUser \
-      CheckSalePackingListNoErrorText \
+      CheckSalePackingListErrorText \
       CheckDeliveredSalePackingList \
       Logout \
       LoginERP5TypeTestCase \
@@ -522,7 +529,9 @@ class TestVifibSlapComputerPartitionError(TestVifibSlapWebServiceMixin):
     sequence_string = self.prepare_computer_partition_accounting_resource_sequence_string + '\
       LoginDefaultUser \
       StartSalePackingList \
+      CleanTic \
       StopSalePackingList \
+      CleanTic \
       DeliverSalePackingList \
       Tic \
       Logout \

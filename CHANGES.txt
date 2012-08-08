@@ -1,11 +1,65 @@
 Changes
 =======
 
-0.25 (Unreleased)
+0.27 (Unreleased)
+-----------------
+
+ * slapformat: Raise correct error when no IPv6 is available on selected
+   interface. [Cedric de Saint Martin]
+ * slapgrid: Introduce --only_sr and --only_cp.
+     - only_sr filter and force the run of a single SR, and uses url_md5
+       (folder_id)
+     - only_cp filter which computer patition, will be runned. it can be a
+       list, splited by comman (slappartX,slappartY ...) [Rafael Monnerat]
+ * slapgrid: Cleanup unused option (--usage-report-periodicity). [Cedric de
+   Saint Martin]
+ * slapgrid: --develop will work also for Computer Partitions. [Cedric de Saint
+   Martin]
+ * slaplib: setConnectionDict won't call Master if parameters haven't changed.
+   [Cedric de Saint Martin]
+
+0.26.2 (2012-07-09)
+-----------------
+
+ * Define UTF-8 encoding in SlapOS Node codebase, as defined in PEP-263.
+
+0.26.1 (2012-07-06)
+-----------------
+
+ * slapgrid-sr: Add --develop option to make it ignore .completed files.
+ * SLAP library: it is now possible to fetch whole dict of connection
+   parameters.
+ * SLAP library: it is now possible to fetch single instance parameter.
+ * SLAP library: change Computer and ComputerPartition behavior to have proper
+   caching of computer partition parameters.
+
+0.26 (2012-07-05)
+-----------------
+
+ * slapformat: no_bridge option becomes 'not create_tap'.
+   create_tap is true by default. So a bridge is used and tap will be created by
+   default. [Cedric de Saint Martin]
+ * Add delay for slapformat. [Cedric Le Ninivin]
+ * If no software_type is given, use default one (i.e fix "error 500" when
+   requesting new instance). [Cedric de Saint Martin]
+ * slapgrid: promise based software release, new api to fetch full computer
+   information from server. [Yingjie Xu]
+ * slapproxy: new api to mock full computer information [Yingjie Xu]
+ * slapgrid: minor fix randomise delay feature. [Yingjie Xu]
+ * slapgrid: optimise slapgrid-cp, run buildout only if there is an update
+   on server side. [Yingjie Xu]
+ * libslap: Allow accessing ServerError. [Vincent Pelletier]
+
+0.25 (2012-05-16)
 -----------------
 
  * Fix support for no_bridge option in configuration files for some values:
    no_bridge = false was stated as true. [Cedric de Saint Martin]
+ * Delay a randomized period of time before calling slapgrid. [Yingjie Xu]
+ * slapformat: Don't require tunctl if no_bridge is set [Leonardo Rochael]
+ * slapformat: remove monkey patching when creating address so that it doesn't
+   return false positive. [Cedric de Saint Martin]
+ * Various: clearer error messages.
 
 0.24 (2012-03-29)
 -----------------
