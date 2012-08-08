@@ -39,9 +39,3 @@ def main():
     if sys.argv[2] == "register":
       sys.argv=sys.argv[2:]
       node_register()
-      
-      
-      
-
-if __name__ == "__main__":
-  main()
