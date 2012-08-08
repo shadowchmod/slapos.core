@@ -27,22 +27,78 @@
 ##############################################################################
 
 
+import base64
+from getpass import getpass
+from optparse import OptionParser, Option
 import os
+import pkg_resources
 import shutil
 import sys
 import urllib2
-import base64
-import pkg_resources
-from getpass import getpass
 
 
-# Utility fonction to get yes/no answers
-def get_yes_no (prompt):
-  ok= 0
-  while not ok:
-    answer=raw_input( prompt + " [y,n]: " )
-    if answer.upper() in [ 'Y','YES' ]: return True
-    if answer.upper() in [ 'N', 'NO' ]: return False
+class SlapError(Exception):
+  """
+  Slap error
+  """
+  def __init__(self, message):
+    self.msg = message
+
+class UsageError(SlapError):
+  pass
+
+class ExecError(SlapError):
+  pass
+
+class Parser(OptionParser):
+  """
+  Parse all arguments.
+  """
+  def __init__(self, usage=None, version=None):
+    """
+    Initialize all options possibles.
+    """
+    OptionParser.__init__(self, usage=usage, version=version,
+                          option_list=[
+      Option(None,"--interface-name",
+             help="Interface name to access internet",
+             default='eth0',
+             type=str),
+      Option(None,"--master-url",
+             help="URL of vifib master",
+             default='https://slap.vifib.com',
+             type=str),
+      Option(None,"--partition-number",
+             help="Number of partition on computer",
+             default='10',
+             type=int),
+      Option(None,"--ipv4-local-network",
+             help="Base of ipv4 local network",
+             default='10.0.0.0/16',
+             type=str),
+      Option(None,"--ipv6-interface",
+             help="Interface name to get ipv6",
+             default = '',
+             type=str),
+      Option("-n", "--dry-run",
+             help="Simulate the execution steps",
+             default=False,
+             action="store_true"),
+   ])
+
+  def check_args(self):
+    """
+    Check arguments
+    """
+    (options, args) = self.parse_args()
+    if len(args) != 1:
+      self.error("Incorrect number of arguments")
+    node_name = args[0]
+    
+    if options.ipv6_interface != '' :
+      options.ipv6_interface = ('ipv6_interface = ' + options.ipv6_interface)
+
+    return options, node_name
 
 
 # Get user id and encode it for basic identification
@@ -65,9 +121,8 @@ def check_login(identification):
   else : return 0
   
 # Download certificates on vifib master
-def get_certificates(identification):
-  server_name = raw_input ("Please enter a unique computer name: ")
-  register_server_url = "https://www.vifib.net/add-a-server/WebSection_registerNewComputer?dialog_id=WebSection_viewServerInformationDialog&dialog_method=WebSection_registerNewComputer&title={}&object_path=/erp5/web_site_module/hosting/add-a-server&update_method=&cancel_url=https%3A//www.vifib.net/add-a-server/WebSection_viewServerInformationDialog&Base_callDialogMethod=&field_your_title=Essai1&dialog_category=None&form_id=view".format(server_name)
+def get_certificates(identification,node_name):
+  register_server_url = "https://www.vifib.net/add-a-server/WebSection_registerNewComputer?dialog_id=WebSection_viewServerInformationDialog&dialog_method=WebSection_registerNewComputer&title={}&object_path=/erp5/web_site_module/hosting/add-a-server&update_method=&cancel_url=https%3A//www.vifib.net/add-a-server/WebSection_viewServerInformationDialog&Base_callDialogMethod=&field_your_title=Essai1&dialog_category=None&form_id=view".format(node_name)
   request = urllib2.Request(register_server_url)
   # Prepare header for basic authentification
   authheader =  "Basic %s" % identification
@@ -155,9 +210,10 @@ def slapconfig(config):
           computer_id=config.computer_id, master_url=config.master_url,
           key_file=key_file, cert_file=cert_file,
           certificate_repository_path=certificate_repository_path,
-          partition_amount=config.partition_amount,
-          interface=config.interface,
-          ipv4_network=config.ipv4_network
+          partition_amount=config.partition_number,
+          interface=config.interface_name,
+          ipv4_network=config.ipv4_local_network,
+          ipv6_interface=config.ipv6_interface
           ))
     print "SlapOS configuration: DONE"
   finally:
@@ -165,81 +221,78 @@ def slapconfig(config):
 
 # Class containing all parameters needed for configuration
 class Config:
-  def setConfig(self,slapos_configuration,
-                dry_run,
-                computer_id, master_url, interface,
-                ipv4_network,
-                certificate, key):
+  def setConfig(self, option_dict, node_name):
     """
     Set options given by parameters.
     """
-    self.slapos_configuration = slapos_configuration
-    self.dry_run = dry_run
-    self.computer_id = computer_id
-    self.master_url = master_url
-    self.interface = interface
-    self.ipv4_network = ipv4_network
-    self.certificate = certificate
-    self.key = key
+    # Set options parameters
+    for option, value in option_dict.__dict__.items():
+      setattr(self, option, value)
+    self.node_name = node_name
 
-  def userConfig(self):
-    self.master_url = raw_input("""Master URL [%s] :""" %self.master_url) or self.master_url
-    self.partition_amount = raw_input("""Number of SlapOS partitions for this computer? """)
-    self.interface = "interface_name = "+ ''.join(raw_input("""Name of interface used to access internet [%s] :""" % self.interface) or self.interface)
-    self.ipv4_network = raw_input("Ipv4 sub-network [%s] :" % self.ipv4_network) or self.ipv4_network
+  def COMPConfig(self, slapos_configuration,
+                   computer_id,
+                   certificate,
+                   key):
+    self.slapos_configuration= slapos_configuration
+    self.computer_id=computer_id
+    self.certificate=certificate
+    self.key=key
 
   def displayUserConfig(self):
-    print "Computer reference : %s" % self.computer_id
+    print "Computer Name : %s" % self.node_name
     print "Master URL: %s" % self.master_url
-    print "Number of partition: %s" % self.partition_amount
-    print "%s" % self.interface
-    print "Ipv4 sub network: %s" % self.ipv4_network
+    print "Number of partition: %s" % self.partition_number
+    print "Interface Name: %s" % self.interface_name
+    print "Ipv4 sub network: %s" % self.ipv4_local_network
+    print "Ipv6 Interface: %s" %self.ipv6_interface
 
-
-
-def register():
+def register(config):
   # Get User identification and check them 
   while True :
     print ("Please enter your Vifib login")
     user_id = get_login()
     if check_login(user_id): break
-    print ("Wrong login/password")
-  
+    print ("Wrong login/password")  
   # Get source code of page having certificate and key 
-  certificate_key = get_certificates(user_id)
+  certificate_key = get_certificates(user_id,config.node_name)
   # Parse certificate and key and get computer id
   certificate_key = parse_certificates(certificate_key)
   certificate = certificate_key[0]
   key = certificate_key[1]
-  COMP = get_computer_name(certificate)
-  
+  COMP = get_computer_name(certificate)  
   # Getting configuration parameters
   slapos_configuration='/etc/opt/slapos/'
-  config= Config()
-  config.setConfig(slapos_configuration=slapos_configuration,
-                   dry_run=False,
+  config.COMPConfig(slapos_configuration=slapos_configuration,
                    computer_id=COMP,
-                   master_url="""https://slap.vifib.com""",
-                   interface = "eth0",
-                   ipv4_network= "10.0.0.0/16",
                    certificate = certificate,
                    key = key
                    )
-  while True:
-    config.userConfig()
-    print "\nThis your configuration: \n"
-    config.displayUserConfig()
-    if get_yes_no("\nDo you confirm?"):
-      break
-
   # Save former configuration
   save_former_config()
-
   # Prepare Slapos Configuration
   slapconfig(config)
-  
 
 
- 
-if __name__ == "__main__":
-  register()
+def main():
+  "Run default configuration."
+  usage = "usage: %s NODE_NAME [options] " % sys.argv[0]
+
+  try:
+    # Parse arguments
+    config = Config()
+    config.setConfig(*Parser(usage=usage).check_args())
+    register(config)
+    return_code = 0
+  except UsageError, err:
+    print >>sys.stderr, err.msg
+    print >>sys.stderr, "For help use --help"
+    return_code = 16
+  except ExecError, err:
+    print >>sys.stderr, err.msg
+    return_code = 16
+  except SystemExit, err:
+    # Catch exception raise by optparse
+    return_code = err
+
+  sys.exit(return_code)
