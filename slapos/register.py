@@ -276,7 +276,7 @@ def register(config):
 
 def main():
   "Run default configuration."
-  usage = "usage: %s NODE_NAME [options] " % sys.argv[0]
+  usage = "usage: slapos node %s NODE_NAME [options] " % sys.argv[0]
 
   try:
     # Parse arguments
