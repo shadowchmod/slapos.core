@@ -139,14 +139,14 @@ sysctl -w fs.aio-max-nr=262144
 # Execute slapformat
 i=1
 echo -n "Running slapformat..."
-/opt/slapos/bin/slapformat --verbose --console $SLAPOS_CONFIGURATION/slapos.cfg
+/opt/slapos/bin/slapformat --now --verbose --console $SLAPOS_CONFIGURATION/slapos.cfg
 while [[ $? != 0 ]]; do
     sleep $(($i*60))
     if [[ $i < 20 ]]; then
 	let i++
     fi
     echo "Retrying slapformat"
-    /opt/slapos/bin/slapformat --verbose --console $SLAPOS_CONFIGURATION/slapos.cfg
+    /opt/slapos/bin/slapformat --now --verbose --console $SLAPOS_CONFIGURATION/slapos.cfg
 done
 echo "done."
 
