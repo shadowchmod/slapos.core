@@ -88,7 +88,9 @@ cd $RPM_BUILD_DIR/slapos-node_%{unmangled_version}+%{slapversion}+0/slapprepare/
 python setup.py install --single-version-externally-managed -O1 --root=$RPM_BUILD_ROOT --record=INSTALLED_FILES
 ln -s $RPM_BUILD_ROOT/opt/slapos/bin/slapos $RPM_BUILD_ROOT/usr/bin/slapos
 mkdir -p $RPM_BUILD_ROOT/etc/cron.d/
-cp $RPM_BUILD_DIR/slapos-node_%{unmangled_version}+%{slapversion}+0/template/cron.d/slapos-node $RPM_BUILD_ROOT/etc/cron.d/
+cp $RPM_BUILD_DIR/slapos-node_%{unmangled_version}+%{slapversion}+0/template/slapos-node.cron.d $RPM_BUILD_ROOT/etc/cron.d/slapos-node
+mkdir -p $RPM_BUILD_ROOT/etc/systemd/system/
+cp $RPM_BUILD_DIR/slapos-node_%{unmangled_version}+%{slapversion}+0/template/slapos-node.service %{buildroot}/etc/systemd/system/
 
 %files
 /
@@ -97,5 +99,12 @@ cp $RPM_BUILD_DIR/slapos-node_%{unmangled_version}+%{slapversion}+0/template/cro
 
 %post
 echo "In order to configure SlapOS Node run slapprepare command"
+systemctl enable slapos-node.service
 
+%preun
+systemctl stop slapos-node.service
+
+
+%postun
+systemctl restart slapos-node.service
 
