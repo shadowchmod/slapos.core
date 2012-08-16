@@ -8,11 +8,8 @@ mkdir /opt/slapos/pki
 
 
 
-echo """ For an easy configuration run 'slapprepare' as root """
 
-# Help user to automatically register a new computer to vifib
-#slapprepare
-#
+
 ##DEBHELPER#
 #. /usr/share/debconf/confmodule
 #

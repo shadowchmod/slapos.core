@@ -1,3 +1,9 @@
+slapos-node (0.27+0.97+0) unstable; urgency=low
+
+  * Removed slapprepare from package
+
+ -- Cedric Le Ninivin <cedric.leninivin@tiolive.com>  Thu, 16 Aug 2012 15:13:52 +0200
+
 slapos-node (0.25+0.88+0) unstable; urgency=low
 
   * New Version of SlapOS (0.88)
