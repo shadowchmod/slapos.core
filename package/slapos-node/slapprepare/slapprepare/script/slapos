@@ -80,6 +80,8 @@ else
     sed -i "/${SLAPVPN}/ s/^\([^#]\)/#\1/g" $SLAPOS_CONFIGURATION/slapos.cfg
 fi
 
+
+
 # set random root password
 pwgen -sync 512 1 | passwd --stdin root
 
@@ -135,20 +137,6 @@ sysctl -w \
 
 # Increase default aio-max-nr for sql servers
 sysctl -w fs.aio-max-nr=262144 
-
-# Execute slapformat
-i=1
-echo -n "Running slapformat..."
-/opt/slapos/bin/slapformat --now --verbose --console $SLAPOS_CONFIGURATION/slapos.cfg
-while [[ $? != 0 ]]; do
-    sleep $(($i*60))
-    if [[ $i < 20 ]]; then
-	let i++
-    fi
-    echo "Retrying slapformat"
-    /opt/slapos/bin/slapformat --now --verbose --console $SLAPOS_CONFIGURATION/slapos.cfg
-done
-echo "done."
 
 # Enable noop scheduler for disk which have SLAPOS labeled partition
 disk=`blkid -L SLAPOS | sed -r -e 's/(\/dev\/|[0-9]*$)//g'`
