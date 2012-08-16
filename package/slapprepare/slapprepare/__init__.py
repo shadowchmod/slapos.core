@@ -182,14 +182,13 @@ def slapserver(config):
                                       'template/ifcfg-br0.in').read())
 
     # Creating boot scripts
-    path = os.path.join(config.slapos_configuration, 'slapos')
+    path = os.path.join('/','usr','sbin', 'slapos-boot-dedicated')
     print "Creating %r" % path
     if not dry_run:
       open(path, 'w').write(pkg_resources.resource_stream(__name__,
-                                                          'script/%s' % 'slapos').read() % dict(
-          slapos_configuration=config.slapos_configuration))
+                                                          'script/%s' % 'slapos').read()
       os.chmod(path, 0755)
-    path = os.path.join(mount_dir_path, 'etc', 'systemd', 'system','slapos.service')
+    path = os.path.join(mount_dir_path, 'etc', 'systemd', 'system','slapos-boot-dedicated.service')
     print "Creating %r" % path
     if not dry_run:
       open(path, 'w').write(pkg_resources.resource_stream(__name__,
