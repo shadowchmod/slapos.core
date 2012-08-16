@@ -80,6 +80,8 @@ else
     sed -i "/${SLAPVPN}/ s/^\([^#]\)/#\1/g" $SLAPOS_CONFIGURATION/slapos.cfg
 fi
 
+
+
 # set random root password
 pwgen -sync 512 1 | passwd --stdin root
 
@@ -115,7 +117,7 @@ PATH=/usr/bin:/usr/sbin:/sbin:/bin:/usr/lib/news/bin
 MAILTO=root
 0 0 * * * root /opt/slapos/bin/slapformat --verbose --log_file=/opt/slapos/slapformat.log $SLAPOS_CONFIGURATION/slapos.cfg >> /opt/slapos/slapformat.log 2>&1
 */5 * * * * root /opt/slapos/bin/slapgrid-cp --verbose --logfile=/opt/slapos/slapgrid-cp.log --pidfile=/opt/slapos/slapgrid-cp.pid $SLAPOS_CONFIGURATION/slapos.cfg >> /opt/slapos/slapgrid-cp.log 2>&1
-*/5 * * * * root /opt/slapos/bin/slapgrid-sr --verbose --logfile=/opt/slapos/slapgrid-sr.log --pidfile=/opt/slapos/slapgrid-sr.pid $SLAPOS_CONFIGURATION/slapos.cfg >> /opt/slapos/slapgrid-sr.log 2>&1
+*/15 * * * * root /opt/slapos/bin/slapgrid-sr --verbose --logfile=/opt/slapos/slapgrid-sr.log --pidfile=/opt/slapos/slapgrid-sr.pid $SLAPOS_CONFIGURATION/slapos.cfg >> /opt/slapos/slapgrid-sr.log 2>&1
 0 0 * * * root /opt/slapos/bin/slapgrid-ur --verbose --logfile=/opt/slapos/slapgrid-ur.log --pidfile=/opt/slapos/slapgrid-ur.pid $SLAPOS_CONFIGURATION/slapos.cfg >> /opt/slapos/slapgrid-ur.log 2>&1
 """ > /etc/cron.d/slapos
 
@@ -135,20 +137,6 @@ sysctl -w \
 
 # Increase default aio-max-nr for sql servers
 sysctl -w fs.aio-max-nr=262144 
-
-# Execute slapformat
-i=1
-echo -n "Running slapformat..."
-/opt/slapos/bin/slapformat --now --verbose --console $SLAPOS_CONFIGURATION/slapos.cfg
-while [[ $? != 0 ]]; do
-    sleep $(($i*60))
-    if [[ $i < 20 ]]; then
-	let i++
-    fi
-    echo "Retrying slapformat"
-    /opt/slapos/bin/slapformat --now --verbose --console $SLAPOS_CONFIGURATION/slapos.cfg
-done
-echo "done."
 
 # Enable noop scheduler for disk which have SLAPOS labeled partition
 disk=`blkid -L SLAPOS | sed -r -e 's/(\/dev\/|[0-9]*$)//g'`
