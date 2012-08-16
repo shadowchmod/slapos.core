@@ -296,22 +296,21 @@ class Config:
     self.server=server
 
   def userConfig(self):
-    if self.server :
-      self.need_ssh = get_yes_no("Do you want a remote ssh access?")
-      self.virtual = get_yes_no("Is this a virtual Machine?")
-      if not self.virtual:
-        self.one_disk = not get_yes_no ("Do you want to use SlapOS with a second disk?")
-      else:
-        self.one_disk=True
-      self.force_vpn = get_yes_no ("Do you want to force the use of vpn to provide ipv6?") 
-      self.interface = "bridge_name = br0"
+    self.virtual = get_yes_no("Is this a virtual Machine?")
+    if not self.virtual:
+      self.one_disk = not get_yes_no ("Do you want to use SlapOS with a second disk?")
+    else:
+      self.one_disk=True
+    self.force_vpn = get_yes_no ("Do you want to force the use of vpn to provide ipv6?") 
+    if self.force_vpn : 
+      self.ipv6_interface = "tapVPN"
+    else : 
+      self.ipv6_interface = ""
     if self.certificates:
+      self.computer_name = raw_input("Define a unique name for this computer: ")
       self.partition_amount = raw_input("""Number of SlapOS partitions for this computer? """)
-      if not self.server :
-        self.interface = "interface_name = "+ ''.join(raw_input(""" Name of interface used to access internet (eth0, wlan0, br0...)? """))
 
   def displayUserConfig(self):
-    print "Computer reference : %s" %self.computer_id
     print "Suse Server for SlapOS : %s" % self.server
     if self.server:
       print "Ipv6 over VPN: %s" % self.force_vpn
@@ -321,21 +320,14 @@ class Config:
         print "Use a second disk: %s" % (not self.one_disk)
     if self.certificates:
       print "Number of partition: %s" % (self.partition_amount)
-      if not self.server :
-        print (self.interface)
-
+      print "Computer name: %s" % self.computer_name
+      
 def slapprepare():
   try:
     temp_directory=os.path.join('/tmp/slaptemp/')
     if not os.path.exists(temp_directory):
       print "Creating directory: %s" % temp_directory
       os.mkdir(temp_directory, 0711)
-
-    # Set preference by asking user
-    if suse_version() >= 12.1 :
-      is_server = get_yes_no ("Is this a Suse Server for SlapOS?")
-    else :
-      is_server = False
 
     certificates = get_yes_no("Automatically register new computer to Vifib?")
     if certificates:      
@@ -356,8 +348,7 @@ def slapprepare():
                      key_path=os.path.join(temp_directory,'authorized_keys'),
                      master_url="""https://slap.vifib.com""",
                      temp_dir=temp_directory,
-                     certificates=certificates,
-                     server=is_server)
+                     certificates=certificates)
     
     while 1:
       config.userConfig()
@@ -365,10 +356,14 @@ def slapprepare():
       config.displayUserConfig()
       if get_yes_no("\nDo you confirm?"):
         break
+      
 
     # Prepare Slapos Configuration
     if config.certificates:  
-      slapconfig(config)
+      _call(['slapos','node','register',config.computer_name
+             ,'--interface-name','br0'
+             ,'--ipv6-interface',config.ipv6_interface
+             ,'--partition-number',config.partition_amount])
 
 
     # Prepare for bridge
