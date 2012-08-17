@@ -26,6 +26,8 @@
 #
 ##############################################################################
 
+systemctl stop slapos-node.service
+systemctl disable slapos-node.service
 
 # clean the system
 for service in rpcbind network-remotefs postfix ; do
@@ -156,3 +158,6 @@ modprobe f71882fg
 
 # Activate KSM (shared memory for KVM)
 echo 1 > /sys/kernel/mm/ksm/run
+
+systemctl enable slapos-node.service
+systemctl start slapos-node.service
