@@ -88,6 +88,19 @@ def suse_version():
           return float(dist[2])
   else :
     return 0
+
+
+# Parse certificate to get computer name and return it
+def get_computer_name(slapos_configuration):
+  conf_file=open(slapos_configuration,"r")
+  for line in conf_file:
+    if "computer_id" in line:
+      i=line.find("COMP-")
+      conf_file.close()
+      return line[i:]
+  return -1
+
+
  
 def enable_bridge(slapos_configuration):
   #Create temp file
@@ -186,7 +199,7 @@ def slapserver(config):
     print "Creating %r" % path
     if not dry_run:
       open(path, 'w').write(pkg_resources.resource_stream(__name__,
-                                                          'script/%s' % 'slapos').read()
+                                                          'script/%s' % 'slapos').read() )
       os.chmod(path, 0755)
     path = os.path.join(mount_dir_path, 'etc', 'systemd', 'system','slapos-boot-dedicated.service')
     print "Creating %r" % path
@@ -249,7 +262,7 @@ log /var/log/openvpn.log""" % dict(
     # Removing line in slapos script activating kvm in virtual 
     if config.virtual:
       if not dry_run:
-        path = os.path.join(config.slapos_configuration,'slapos')
+        path = os.path.join('/','usr','sbin', 'slapos-boot-dedicated')
         _call(['sed','-i',"$d",path],dry_run=dry_run)
         _call(['sed','-i',"$d",path],dry_run=dry_run)
       
@@ -279,7 +292,7 @@ class Config:
                 hostname_path, host_path,
                 dry_run,
                 key_path, master_url, 
-                temp_dir, certificates, server):
+                temp_dir,computer_id):
     """
     Set options given by parameters.
     """
@@ -291,10 +304,14 @@ class Config:
     self.master_url = master_url
     self.mount_dir_path = mount_dir_path
     self.temp_dir=temp_dir
-    self.certificates=certificates
-    self.server=server
+    self.computer_id=computer_id
+
 
   def userConfig(self):
+    self.certificates = get_yes_no("Automatically register new computer to Vifib?")
+    if self.certificates:
+      self.computer_name = raw_input("Define a unique name for this computer: ")
+      self.partition_amount = raw_input("""Number of SlapOS partitions for this computer? """)
     self.virtual = get_yes_no("Is this a virtual Machine?")
     if not self.virtual:
       self.one_disk = not get_yes_no ("Do you want to use SlapOS with a second disk?")
@@ -305,21 +322,17 @@ class Config:
       self.ipv6_interface = "tapVPN"
     else : 
       self.ipv6_interface = ""
-    if self.certificates:
-      self.computer_name = raw_input("Define a unique name for this computer: ")
-      self.partition_amount = raw_input("""Number of SlapOS partitions for this computer? """)
+    self.need_ssh = get_yes_no("Do you want a remote ssh access?")
 
   def displayUserConfig(self):
-    print "Suse Server for SlapOS : %s" % self.server
-    if self.server:
-      print "Ipv6 over VPN: %s" % self.force_vpn
-      print "Remote ssh access: %s" % self.need_ssh
-      print "Virtual Machine: %s" % self.virtual
-      if not self.virtual:
-        print "Use a second disk: %s" % (not self.one_disk)
     if self.certificates:
       print "Number of partition: %s" % (self.partition_amount)
       print "Computer name: %s" % self.computer_name
+    print "Ipv6 over VPN: %s" % self.force_vpn
+    print "Remote ssh access: %s" % self.need_ssh
+    print "Virtual Machine: %s" % self.virtual
+    if not self.virtual:
+      print "Use a second disk: %s" % (not self.one_disk)
       
 def slapprepare():
   try:
@@ -328,8 +341,15 @@ def slapprepare():
       print "Creating directory: %s" % temp_directory
       os.mkdir(temp_directory, 0711)
 
-    certificates = get_yes_no("Automatically register new computer to Vifib?")
-    if certificates:      
+    config= Config()
+    while True :
+      config.userConfig()
+      print "\nThis your configuration: \n"
+      config.displayUserConfig()
+      if get_yes_no("\nDo you confirm?"):
+        break
+
+    if config.certificates:      
       slapos_configuration='/etc/opt/slapos/'
     else:
       # Check for config file in /etc/slapos/
@@ -337,46 +357,40 @@ def slapprepare():
         slapos_configuration='/etc/slapos/'
       else:
         slapos_configuration='/etc/opt/slapos/'
- 
-    config= Config()
-    config.setConfig(mount_dir_path = '/',
-                     slapos_configuration=slapos_configuration,
-                     hostname_path='/etc/HOSTNAME',
-                     host_path='/etc/hosts',
-                     dry_run=False,
-                     key_path=os.path.join(temp_directory,'authorized_keys'),
-                     master_url="""https://slap.vifib.com""",
-                     temp_dir=temp_directory,
-                     certificates=certificates)
-    
-    while 1:
-      config.userConfig()
-      print "\nThis your configuration: \n"
-      config.displayUserConfig()
-      if get_yes_no("\nDo you confirm?"):
-        break
-      
-
+       
     # Prepare Slapos Configuration
     if config.certificates:  
       _call(['slapos','node','register',config.computer_name
              ,'--interface-name','br0'
              ,'--ipv6-interface',config.ipv6_interface
-             ,'--partition-number',config.partition_amount])
+             ,'--partition-number',config.partition_amount])      
+      # Prepare for bridge
+      enable_bridge(slapos_configuration)
 
+    computer_id = get_computer_name(os.path.join('/',slapos_configuration,'slapos.cfg'))
+    
+    print computer_id
 
-    # Prepare for bridge
-    enable_bridge(config.slapos_configuration)
+    config.setConfig(mount_dir_path = '/',
+                    slapos_configuration=slapos_configuration,
+                    hostname_path='/etc/HOSTNAME',
+                    host_path='/etc/hosts',
+                    dry_run=False,
+                    key_path=os.path.join(temp_directory,'authorized_keys'),
+                    master_url="""https://slap.vifib.com""",
+                    temp_dir=temp_directory,
+                    computer_id=computer_id)
+    
+ 
 
     # Prepare SlapOS Suse Server confuguration
-    if config.server:
-      if config.need_ssh :
-        get_ssh(temp_directory)
-      slapserver(config)
-      if not config.one_disk:
-        _call(['/etc/init.d/slapos_firstboot'])
-      _call(['systemctl','enable','slapos.service'])
-      _call(['systemctl','start','slapos.service'])
+    if config.need_ssh :
+      get_ssh(temp_directory)
+    slapserver(config)
+    if not config.one_disk:
+      _call(['/etc/init.d/slapos_firstboot'])
+    _call(['systemctl','enable','slapos-boot-dedicated.service'])
+    _call(['systemctl','start','slapos-boot-dedicated.service'])
 
     return_code = 0
   except UsageError, err:
